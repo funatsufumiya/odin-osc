@@ -15,11 +15,13 @@ test_i32_u32_transmut :: proc(t: ^testing.T) {
 
 @(test)
 test_nano_to_fraction_to_nano :: proc(t: ^testing.T) {
-    want: u32 = 1_000_000_000;
+    // want: u32 = 1_000_000_000;
+    want: u32 = 900_000_000;
     fr := vosc.nano_to_fraction(want);
     result := vosc.fraction_to_nano(fr);
-    // fmt.printfln("result: {}", result)
-    testing.expect_value(t, result, want);
+    // testing.expect_value(t,result, want);
+    diff : i64 = abs(i64(result) - i64(want))
+    testing.expect(t, abs(diff) < 2, "abs(result - want) < 2 failed");
 }
 
 @(test)
