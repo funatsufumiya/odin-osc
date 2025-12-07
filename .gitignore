@@ -1,3 +1,3 @@
-tests.exe
-tests.pdb
+*.exe
+*.pdb
 /vosc
