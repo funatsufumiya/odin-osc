@@ -67,7 +67,9 @@ test_read_osc_time :: proc(t: ^testing.T) {
 
 @(test)
 test_add_color :: proc(t: ^testing.T) {
-    buf: [dynamic]u8 = {};
+    buf := make([dynamic]u8);
+    defer delete(buf)
+
     osc_color := vosc.OscColor{r = 0x11, g = 0x22, b = 0x33, a = 0x44};
     vosc.add_color(&buf, osc_color);
     expected: [4]u8 = {u8(0x11), 0x22, 0x33, 0x44};
@@ -79,7 +81,9 @@ test_add_color :: proc(t: ^testing.T) {
 
 @(test)
 test_add_midi :: proc(t: ^testing.T) {
-    midi_buf: [dynamic]u8 = {};
+    midi_buf := make([dynamic]u8);
+    defer delete(midi_buf)
+    
     osc_midi := vosc.OscMidi{port_id = 0x55, status = 0x66, data1 = 0x77, data2 = 0x88};
     vosc.add_midi(&midi_buf, osc_midi);
     expected: [4]u8 = {u8(0x55), 0x66, 0x77, 0x88};
