@@ -4,7 +4,6 @@ import "core:fmt"
 import vosc "../.."
 
 main :: proc() {
-    // Create a new VOSC message
     msg := vosc.OscMessage{address = "/example", args = {int(1), f32(2.0), "hello"}}
 
     fmt.printfln("{}", msg)
