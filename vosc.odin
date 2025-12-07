@@ -66,6 +66,37 @@ OscMessage :: struct {
     args:    []OscValue,
 }
 
+append_int :: proc (buffer: ^[dynamic]u8, v: int) {
+    append_i32(buffer, i32(v))
+}
+
+append_i32 :: proc (buffer: ^[dynamic]u8, v: i32) {
+    // FIXME: need transmut?
+    append(buffer, u8((u32(v) >> 24) & 0xff))
+    append(buffer, u8((u32(v) >> 16) & 0xff))
+    append(buffer, u8((u32(v) >> 8) & 0xff))
+    append(buffer, u8(u32(v) & 0xff))
+}
+
+append_u32 :: proc (buffer: ^[dynamic]u8, v: u32) {
+    append(buffer, u8((u32(v) >> 24) & 0xff))
+    append(buffer, u8((u32(v) >> 16) & 0xff))
+    append(buffer, u8((u32(v) >> 8) & 0xff))
+    append(buffer, u8(u32(v) & 0xff))
+}
+
+append_u64 :: proc (buffer: ^[dynamic]u8, v: u64) {
+    bits := u64(v)
+    append(buffer, u8((bits >> 56) & 0xff))
+    append(buffer, u8((bits >> 48) & 0xff))
+    append(buffer, u8((bits >> 40) & 0xff))
+    append(buffer, u8((bits >> 32) & 0xff))
+    append(buffer, u8((bits >> 24) & 0xff))
+    append(buffer, u8((bits >> 16) & 0xff))
+    append(buffer, u8((bits >> 8) & 0xff))
+    append(buffer, u8(bits & 0xff))
+}
+
 fraction_to_nano :: proc(fraction: u32) -> u32 {
     return u32((u64(fraction) * 1_000_000_000) / (1 << 32))
 }
@@ -93,14 +124,8 @@ extract_rgb :: proc(a: u32) -> OscColor {
 
 // Add time to buffer (big-endian)
 add_time :: proc(buffer: ^[dynamic]u8, time: OscTime) {
-    append(buffer, u8((time.seconds >> 24) & 0xff))
-    append(buffer, u8((time.seconds >> 16) & 0xff))
-    append(buffer, u8((time.seconds >> 8) & 0xff))
-    append(buffer, u8(time.seconds & 0xff))
-    append(buffer, u8((time.frac >> 24) & 0xff))
-    append(buffer, u8((time.frac >> 16) & 0xff))
-    append(buffer, u8((time.frac >> 8) & 0xff))
-    append(buffer, u8(time.frac & 0xff))
+    append_u32(buffer, time.seconds)
+    append_u32(buffer, time.frac)
 }
 
 // to_osc_color: Convert u32 color + alpha to OscColor
@@ -215,9 +240,21 @@ add_midi :: proc(buffer: ^[dynamic]u8, val: OscMidi) {
     append(buffer, val.data2)
 }
 
+read_u32 :: proc(payload: []u8, idx: int) -> (u32, int) {
+    bits := u32(payload[idx]) << 24 | u32(payload[idx+1]) << 16 | u32(payload[idx+2]) << 8 | u32(payload[idx+3])
+    return bits, idx + 4
+}
+
+read_u64 :: proc(payload: []u8, idx: int) -> (u64, int) {
+    bits := u64(payload[idx]) << 56 | u64(payload[idx+1]) << 48 | u64(payload[idx+2]) << 40 | u64(payload[idx+3]) << 32 |
+            u64(payload[idx+4]) << 24 | u64(payload[idx+5]) << 16 | u64(payload[idx+6]) << 8 | u64(payload[idx+7])
+
+    return bits, idx + 8
+}
+
 // Read an OscMessage from payload, starting at index i
 // Returns: OscMessage, next index, ok
-read_message :: proc(payload: []u8, i: int) -> (OscMessage, int, bool) {
+read_message :: proc(payload: []u8, i: int, allocator: mem.Allocator = context.allocator) -> (OscMessage, int, bool) {
     idx := i
     if idx >= len(payload) {
         return OscMessage{}, idx, false
@@ -232,7 +269,7 @@ read_message :: proc(payload: []u8, i: int) -> (OscMessage, int, bool) {
     }
     idx = next_idx
     if idx >= len(payload) {
-        return OscMessage{address=address, args=make([]OscValue, 0)}, idx, true
+        return OscMessage{address=address, args=make([]OscValue, 0, allocator)}, idx, true
     }
     // Read type tags
     type_tags, next_idx2, ok2 := read_padded_str(payload, idx)
@@ -241,7 +278,7 @@ read_message :: proc(payload: []u8, i: int) -> (OscMessage, int, bool) {
     }
     idx = next_idx2
     // Parse arguments
-    args := make([dynamic]OscValue, 0)
+    args := make([dynamic]OscValue, 0, allocator)
     tag_idx := 0
     for tag_idx < len(type_tags) {
         t := type_tags[tag_idx]
@@ -251,15 +288,16 @@ read_message :: proc(payload: []u8, i: int) -> (OscMessage, int, bool) {
             continue
         case 'f':
             if idx+4 > len(payload) { return OscMessage{}, idx, false; }
-            bits := u32(payload[idx]) << 24 | u32(payload[idx+1]) << 16 | u32(payload[idx+2]) << 8 | u32(payload[idx+3])
+            bits, new_idx := read_u32(payload, idx)
+            idx = new_idx
             val := transmute(f32)(bits)
             append(&args, val)
-            idx += 4
         case 'i':
             if idx+4 > len(payload) { return OscMessage{}, idx, false; }
-            val := int(u32(payload[idx]) << 24 | u32(payload[idx+1]) << 16 | u32(payload[idx+2]) << 8 | u32(payload[idx+3]))
+            bits, new_idx := read_u32(payload, idx)
+            idx = new_idx
+            val := int(bits)
             append(&args, val)
-            idx += 4
         case 's':
             str, next_idx3, ok := read_padded_str(payload, idx)
             if !ok { return OscMessage{}, idx, false; }
@@ -267,8 +305,9 @@ read_message :: proc(payload: []u8, i: int) -> (OscMessage, int, bool) {
             idx = next_idx3
         case 'b':
             if idx+4 > len(payload) { return OscMessage{}, idx, false; }
-            length := int(u32(payload[idx]) << 24 | u32(payload[idx+1]) << 16 | u32(payload[idx+2]) << 8 | u32(payload[idx+3]))
-            idx += 4
+            bits, new_idx := read_u32(payload, idx)
+            idx = new_idx
+            length := int(bits)
             if length < 0 || idx+length > len(payload) { return OscMessage{}, idx, false; }
             val := payload[idx:idx+length]
             append(&args, OscBlob{blob=val})
@@ -286,23 +325,22 @@ read_message :: proc(payload: []u8, i: int) -> (OscMessage, int, bool) {
             idx = next_idx
         case 'h': // OscBigIntValue (i64)
             if idx+8 > len(payload) { return OscMessage{}, idx, false; }
-            bits := u64(payload[idx]) << 56 | u64(payload[idx+1]) << 48 | u64(payload[idx+2]) << 40 | u64(payload[idx+3]) << 32 |
-                    u64(payload[idx+4]) << 24 | u64(payload[idx+5]) << 16 | u64(payload[idx+6]) << 8 | u64(payload[idx+7])
+            bits, new_idx := read_u64(payload, idx)
+            idx = new_idx
             val := OscBigIntValue{big_int_val = i64(bits)}
             append(&args, val)
-            idx += 8
         case 'd': // f64
             if idx+8 > len(payload) { return OscMessage{}, idx, false; }
-            bits := u64(payload[idx]) << 56 | u64(payload[idx+1]) << 48 | u64(payload[idx+2]) << 40 | u64(payload[idx+3]) << 32 |
-                    u64(payload[idx+4]) << 24 | u64(payload[idx+5]) << 16 | u64(payload[idx+6]) << 8 | u64(payload[idx+7])
+            bits, new_idx := read_u64(payload, idx)
+            idx = new_idx
             val := transmute(f64)(bits)
             append(&args, val)
-            idx += 8
         case 'I': // InfValue
             append(&args, OscInfValue{})
         case 'c': // rune (u32)
             if idx+4 > len(payload) { return OscMessage{}, idx, false; }
-            bits := u32(payload[idx]) << 24 | u32(payload[idx+1]) << 16 | u32(payload[idx+2]) << 8 | u32(payload[idx+3])
+            bits, new_idx := read_u32(payload, idx)
+            idx = new_idx
             append(&args, rune(bits))
             idx += 4
         case 'r': // OscColor
@@ -382,28 +420,15 @@ append_osc_value :: proc(buffer: ^[dynamic]u8, value: OscValue) {
     switch _ in value {
     case int:
         v := value.(int)
-        append(buffer, u8((u32(v) >> 24) & 0xff))
-        append(buffer, u8((u32(v) >> 16) & 0xff))
-        append(buffer, u8((u32(v) >> 8) & 0xff))
-        append(buffer, u8(u32(v) & 0xff))
+        append_int(buffer, v)
     case f32:
         v := value.(f32)
         bits := transmute(u32)(v)
-        append(buffer, u8((bits >> 24) & 0xff))
-        append(buffer, u8((bits >> 16) & 0xff))
-        append(buffer, u8((bits >> 8) & 0xff))
-        append(buffer, u8(bits & 0xff))
+        append_u32(buffer, bits)
     case f64:
         v := value.(f64)
         bits := transmute(u64)(v)
-        append(buffer, u8((bits >> 56) & 0xff))
-        append(buffer, u8((bits >> 48) & 0xff))
-        append(buffer, u8((bits >> 40) & 0xff))
-        append(buffer, u8((bits >> 32) & 0xff))
-        append(buffer, u8((bits >> 24) & 0xff))
-        append(buffer, u8((bits >> 16) & 0xff))
-        append(buffer, u8((bits >> 8) & 0xff))
-        append(buffer, u8(bits & 0xff))
+        append_u64(buffer, bits)
     case string:
         add_padded_str(buffer, value.(string))
     case bool:
@@ -413,10 +438,7 @@ append_osc_value :: proc(buffer: ^[dynamic]u8, value: OscValue) {
     case OscBlob:
         b := value.(OscBlob).blob
         l := len(b)
-        append(buffer, u8((u32(l) >> 24) & 0xff))
-        append(buffer, u8((u32(l) >> 16) & 0xff))
-        append(buffer, u8((u32(l) >> 8) & 0xff))
-        append(buffer, u8(u32(l) & 0xff))
+        append_u32(buffer, u32(l))
         append_slice(buffer, b)
         if l % 4 != 0 {
             rem := 4 - (l % 4)
@@ -427,24 +449,11 @@ append_osc_value :: proc(buffer: ^[dynamic]u8, value: OscValue) {
     case OscBigIntValue:
         v := value.(OscBigIntValue).big_int_val
         bits := u64(v)
-        append(buffer, u8((bits >> 56) & 0xff))
-        append(buffer, u8((bits >> 48) & 0xff))
-        append(buffer, u8((bits >> 40) & 0xff))
-        append(buffer, u8((bits >> 32) & 0xff))
-        append(buffer, u8((bits >> 24) & 0xff))
-        append(buffer, u8((bits >> 16) & 0xff))
-        append(buffer, u8((bits >> 8) & 0xff))
-        append(buffer, u8(bits & 0xff))
+        append_u64(buffer, bits)
     case OscTime:
         t := value.(OscTime)
-        append(buffer, u8((t.seconds >> 24) & 0xff))
-        append(buffer, u8((t.seconds >> 16) & 0xff))
-        append(buffer, u8((t.seconds >> 8) & 0xff))
-        append(buffer, u8(t.seconds & 0xff))
-        append(buffer, u8((t.frac >> 24) & 0xff))
-        append(buffer, u8((t.frac >> 16) & 0xff))
-        append(buffer, u8((t.frac >> 8) & 0xff))
-        append(buffer, u8(t.frac & 0xff))
+        append_u32(buffer, t.seconds)
+        append_u32(buffer, t.frac)
     case OscColor:
         c := value.(OscColor)
         append(buffer, c.r)
@@ -460,10 +469,7 @@ append_osc_value :: proc(buffer: ^[dynamic]u8, value: OscValue) {
     case rune:
         v := value.(rune)
         bits := u32(v)
-        append(buffer, u8((bits >> 24) & 0xff))
-        append(buffer, u8((bits >> 16) & 0xff))
-        append(buffer, u8((bits >> 8) & 0xff))
-        append(buffer, u8(bits & 0xff))
+        append_u32(buffer, bits)
     case []OscValue:
         arr := value.([]OscValue)
         for elem in arr {
