@@ -34,6 +34,7 @@ main :: proc() {
 		return
 	}
     addr_str := ipv4_to_str(endpoint.address.(net.IP4_Address))
+	defer delete(addr_str)
 	fmt.printfln("OSC sent to {}:{} ({} bytes)", addr_str, endpoint.port, bytes_written)
 	fmt.printfln("Content: {}", msg)
 }
