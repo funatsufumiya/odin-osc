@@ -1,7 +1,7 @@
 # odin-osc
 
 > [!WARNING]
-> work-in-progress, but probably usable already.
+> work-in-progress, not tested enough but probably works already.
 
 A pure Odin implementation of the [OSC(Open Sound Control) 1.0](https://opensoundcontrol.stanford.edu/spec-1_0.html) protocol.
 
