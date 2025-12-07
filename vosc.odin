@@ -60,57 +60,6 @@ OscValue :: union {
     OscInfValue,
 }
 
-// // Enum for OscValue type dispatch
-// OscValueKind :: enum {
-//     Int,
-//     F32,
-//     F64,
-//     String,
-//     Bool,
-//     OscBlob,
-//     Rune,
-//     OscBigIntValue,
-//     OscTime,
-//     OscColor,
-//     OscMidi,
-//     Array,
-//     OscNilValue,
-//     OscInfValue,
-//     Unknown,
-// }
-
-// osc_value_kind_of_int :: proc(val: int) -> OscValueKind { return OscValueKind.Int; }
-// osc_value_kind_of_f32 :: proc(val: f32) -> OscValueKind { return OscValueKind.F32; }
-// osc_value_kind_of_f64 :: proc(val: f64) -> OscValueKind { return OscValueKind.F64; }
-// osc_value_kind_of_string :: proc(val: string) -> OscValueKind { return OscValueKind.String; }
-// osc_value_kind_of_bool :: proc(val: bool) -> OscValueKind { return OscValueKind.Bool; }
-// osc_value_kind_of_OscBlob :: proc(val: OscBlob) -> OscValueKind { return OscValueKind.OscBlob; }
-// osc_value_kind_of_rune :: proc(val: rune) -> OscValueKind { return OscValueKind.Rune; }
-// osc_value_kind_of_OscBigIntValue :: proc(val: OscBigIntValue) -> OscValueKind { return OscValueKind.OscBigIntValue; }
-// osc_value_kind_of_OscTime :: proc(val: OscTime) -> OscValueKind { return OscValueKind.OscTime; }
-// osc_value_kind_of_OscColor :: proc(val: OscColor) -> OscValueKind { return OscValueKind.OscColor; }
-// osc_value_kind_of_OscMidi :: proc(val: OscMidi) -> OscValueKind { return OscValueKind.OscMidi; }
-// osc_value_kind_of_array :: proc(val: []OscValue) -> OscValueKind { return OscValueKind.Array; }
-// osc_value_kind_of_OscNilValue :: proc(val: OscNilValue) -> OscValueKind { return OscValueKind.OscNilValue; }
-// osc_value_kind_of_OscInfValue :: proc(val: OscInfValue) -> OscValueKind { return OscValueKind.OscInfValue; }
-
-// osc_value_kind_of :: proc {
-//     osc_value_kind_of_int,
-//     osc_value_kind_of_f32,
-//     osc_value_kind_of_f64,
-//     osc_value_kind_of_string,
-//     osc_value_kind_of_bool,
-//     osc_value_kind_of_OscBlob,
-//     osc_value_kind_of_rune,
-//     osc_value_kind_of_OscBigIntValue,
-//     osc_value_kind_of_OscTime,
-//     osc_value_kind_of_OscColor,
-//     osc_value_kind_of_OscMidi,
-//     osc_value_kind_of_array,
-//     osc_value_kind_of_OscNilValue,
-//     osc_value_kind_of_OscInfValue
-// }
-
 // OscMessage
 OscMessage :: struct {
     address: string,
