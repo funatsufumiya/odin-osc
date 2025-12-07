@@ -27,10 +27,6 @@ document WIP
 
 document WIP
 
-## Install
-
-document WIP
-
 ## Tests
 
 ```bash
