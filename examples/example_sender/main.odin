@@ -15,7 +15,7 @@ main :: proc() {
 
 	socket, err := net.create_socket(.IP4, .UDP)
 	if err != .None {
-		fmt.printfln("failed to create UDP socket: {}", err)
+		fmt.eprintfln("failed to create UDP socket: {}", err)
 		return
 	}
 	defer net.close(socket)
@@ -30,7 +30,7 @@ main :: proc() {
 
 	bytes_written, send_err := net.send_udp(udp_socket, buf[:], endpoint)
 	if send_err != net.UDP_Send_Error.None {
-		fmt.printfln("failed to send UDP: {}", send_err)
+		fmt.eprintfln("failed to send UDP: {}", send_err)
 		return
 	}
     addr_str := ipv4_to_str(endpoint.address.(net.IP4_Address))
