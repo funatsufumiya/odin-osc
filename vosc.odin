@@ -71,7 +71,6 @@ append_int :: proc (buffer: ^[dynamic]u8, v: int) {
 }
 
 append_i32 :: proc (buffer: ^[dynamic]u8, v: i32) {
-    // FIXME: need transmut?
     append(buffer, u8((u32(v) >> 24) & 0xff))
     append(buffer, u8((u32(v) >> 16) & 0xff))
     append(buffer, u8((u32(v) >> 8) & 0xff))

@@ -5,6 +5,14 @@ import "core:math"
 import vosc ".."
 
 @(test)
+test_i32_u32_transmut :: proc(t: ^testing.T) {
+    a: i32 = -300
+    b: u32 = u32(a)
+    c: i32 = i32(b)
+    testing.expect(t, a == c, "i32 u32 transmut test failed");
+}
+
+@(test)
 test_nano_to_fraction_to_nano :: proc(t: ^testing.T) {
     want: u32 = 1_000_000_000;
     fr := vosc.nano_to_fraction(want);
