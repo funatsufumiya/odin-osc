@@ -10,14 +10,9 @@ ipv4_to_str :: proc(addr: net.IP4_Address, allocator: mem.Allocator = context.al
     return fmt.aprintf("{}.{}.{}.{}", addr[0], addr[1], addr[2], addr[3], allocator=allocator)
 }
 
-// addr_to_str :: proc(addr: [4]u8, allocator: mem.Allocator = context.allocator) -> string {
-//     return fmt.aprintf("{}.{}.{}.{}", addr[0], addr[1], addr[2], addr[3], allocator=allocator)
-// }
-
 main :: proc() {
 	endpoint := net.Endpoint{address = net.IP4_Address{127,0,0,1}, port = 9000}
 
-	// UDPソケット作成
 	socket, err := net.create_socket(.IP4, .UDP)
 	if err != .None {
 		fmt.printfln("failed to create UDP socket: {}", err)

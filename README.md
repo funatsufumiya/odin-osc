@@ -11,7 +11,7 @@ Ported from [funatsufumiya/vosc](https://github.com/funatsufumiya/vosc)
 
 ### Sender
 
-document WIP
+see [sender example](./examples/example_sender/main.odin).
 
 ### Receiver (using filter)
 
