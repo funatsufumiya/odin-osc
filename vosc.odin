@@ -279,7 +279,52 @@ read_message :: proc(payload: []u8, i: int) -> (OscMessage, int, bool) {
             append(&args, false)
         case 'N':
             append(&args, OscNilValue{})
-        // Add more type tags as needed (t, h, d, I, c, r, m, etc.)
+        case 't': // OscTime
+            time, next_idx, ok := read_osc_time(payload, idx)
+            if !ok { return OscMessage{}, idx, false; }
+            append(&args, time)
+            idx = next_idx
+        case 'h': // OscBigIntValue (i64)
+            if idx+8 > len(payload) { return OscMessage{}, idx, false; }
+            bits := u64(payload[idx]) << 56 | u64(payload[idx+1]) << 48 | u64(payload[idx+2]) << 40 | u64(payload[idx+3]) << 32 |
+                    u64(payload[idx+4]) << 24 | u64(payload[idx+5]) << 16 | u64(payload[idx+6]) << 8 | u64(payload[idx+7])
+            val := OscBigIntValue{big_int_val = i64(bits)}
+            append(&args, val)
+            idx += 8
+        case 'd': // f64
+            if idx+8 > len(payload) { return OscMessage{}, idx, false; }
+            bits := u64(payload[idx]) << 56 | u64(payload[idx+1]) << 48 | u64(payload[idx+2]) << 40 | u64(payload[idx+3]) << 32 |
+                    u64(payload[idx+4]) << 24 | u64(payload[idx+5]) << 16 | u64(payload[idx+6]) << 8 | u64(payload[idx+7])
+            val := transmute(f64)(bits)
+            append(&args, val)
+            idx += 8
+        case 'I': // InfValue
+            append(&args, OscInfValue{})
+        case 'c': // rune (u32)
+            if idx+4 > len(payload) { return OscMessage{}, idx, false; }
+            bits := u32(payload[idx]) << 24 | u32(payload[idx+1]) << 16 | u32(payload[idx+2]) << 8 | u32(payload[idx+3])
+            append(&args, rune(bits))
+            idx += 4
+        case 'r': // OscColor
+            if idx+4 > len(payload) { return OscMessage{}, idx, false; }
+            val := OscColor{
+                r = payload[idx],
+                g = payload[idx+1],
+                b = payload[idx+2],
+                a = payload[idx+3],
+            }
+            append(&args, val)
+            idx += 4
+        case 'm': // OscMidi
+            if idx+4 > len(payload) { return OscMessage{}, idx, false; }
+            val := OscMidi{
+                port_id = payload[idx],
+                status  = payload[idx+1],
+                data1   = payload[idx+2],
+                data2   = payload[idx+3],
+            }
+            append(&args, val)
+            idx += 4
         case:
             // skip unknown type
             continue
