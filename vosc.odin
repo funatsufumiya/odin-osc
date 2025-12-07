@@ -356,11 +356,18 @@ add_message :: proc(buffer: ^[dynamic]u8, msg: OscMessage) {
         switch _ in arg {
         case int:    append(buffer, u8('i'))
         case f32:    append(buffer, u8('f'))
+        case f64:    append(buffer, u8('d'))
         case string: append(buffer, u8('s'))
         case bool:   append(buffer, u8(t_or_f(arg.(bool))))
         case OscBlob: append(buffer, u8('b'))
         case OscNilValue: append(buffer, u8('N'))
-        // Add more type tags as needed
+        case OscInfValue: append(buffer, u8('I'))
+        case OscBigIntValue: append(buffer, u8('h'))
+        case OscTime: append(buffer, u8('t'))
+        case OscColor: append(buffer, u8('r'))
+        case OscMidi: append(buffer, u8('m'))
+        case rune: append(buffer, u8('c'))
+        case []OscValue: append(buffer, u8('['))
         case: append(buffer, u8('?'))
         }
     }
@@ -372,43 +379,104 @@ add_message :: proc(buffer: ^[dynamic]u8, msg: OscMessage) {
     }
     // Add arguments
     for arg in msg.args {
-        switch _ in arg {
-        case int:
-            v := arg.(int)
-            append(buffer, u8((u32(v) >> 24) & 0xff))
-            append(buffer, u8((u32(v) >> 16) & 0xff))
-            append(buffer, u8((u32(v) >> 8) & 0xff))
-            append(buffer, u8(u32(v) & 0xff))
-        case f32:
-            v := arg.(f32)
-            bits := transmute(u32)(v)
-            append(buffer, u8((bits >> 24) & 0xff))
-            append(buffer, u8((bits >> 16) & 0xff))
-            append(buffer, u8((bits >> 8) & 0xff))
-            append(buffer, u8(bits & 0xff))
-        case string:
-            add_padded_str(buffer, arg.(string))
-        case bool:
-        case OscNilValue:
-            // No data for these types
-        case OscBlob:
-            b := arg.(OscBlob).blob
-            l := len(b)
-            append(buffer, u8((u32(l) >> 24) & 0xff))
-            append(buffer, u8((u32(l) >> 16) & 0xff))
-            append(buffer, u8((u32(l) >> 8) & 0xff))
-            append(buffer, u8(u32(l) & 0xff))
-            append_slice(buffer, b)
-            if l % 4 != 0 {
-                rem := 4 - (l % 4)
-                for _ in 0..<rem {
-                    append(buffer, u8(0))
-                }
+        append_osc_value(buffer, arg)
+    }
+}
+
+// Serialize OscValue to buffer
+append_osc_value :: proc(buffer: ^[dynamic]u8, value: OscValue) {
+    switch _ in value {
+    case int:
+        v := value.(int)
+        append(buffer, u8((u32(v) >> 24) & 0xff))
+        append(buffer, u8((u32(v) >> 16) & 0xff))
+        append(buffer, u8((u32(v) >> 8) & 0xff))
+        append(buffer, u8(u32(v) & 0xff))
+    case f32:
+        v := value.(f32)
+        bits := transmute(u32)(v)
+        append(buffer, u8((bits >> 24) & 0xff))
+        append(buffer, u8((bits >> 16) & 0xff))
+        append(buffer, u8((bits >> 8) & 0xff))
+        append(buffer, u8(bits & 0xff))
+    case f64:
+        v := value.(f64)
+        bits := transmute(u64)(v)
+        append(buffer, u8((bits >> 56) & 0xff))
+        append(buffer, u8((bits >> 48) & 0xff))
+        append(buffer, u8((bits >> 40) & 0xff))
+        append(buffer, u8((bits >> 32) & 0xff))
+        append(buffer, u8((bits >> 24) & 0xff))
+        append(buffer, u8((bits >> 16) & 0xff))
+        append(buffer, u8((bits >> 8) & 0xff))
+        append(buffer, u8(bits & 0xff))
+    case string:
+        add_padded_str(buffer, value.(string))
+    case bool:
+    case OscNilValue:
+    case OscInfValue:
+        // No data for these types
+    case OscBlob:
+        b := value.(OscBlob).blob
+        l := len(b)
+        append(buffer, u8((u32(l) >> 24) & 0xff))
+        append(buffer, u8((u32(l) >> 16) & 0xff))
+        append(buffer, u8((u32(l) >> 8) & 0xff))
+        append(buffer, u8(u32(l) & 0xff))
+        append_slice(buffer, b)
+        if l % 4 != 0 {
+            rem := 4 - (l % 4)
+            for _ in 0..<rem {
+                append(buffer, u8(0))
             }
-        // Add more types as needed
-        case:
-            // skip unknown type
-            continue
         }
+    case OscBigIntValue:
+        v := value.(OscBigIntValue).big_int_val
+        bits := u64(v)
+        append(buffer, u8((bits >> 56) & 0xff))
+        append(buffer, u8((bits >> 48) & 0xff))
+        append(buffer, u8((bits >> 40) & 0xff))
+        append(buffer, u8((bits >> 32) & 0xff))
+        append(buffer, u8((bits >> 24) & 0xff))
+        append(buffer, u8((bits >> 16) & 0xff))
+        append(buffer, u8((bits >> 8) & 0xff))
+        append(buffer, u8(bits & 0xff))
+    case OscTime:
+        t := value.(OscTime)
+        append(buffer, u8((t.seconds >> 24) & 0xff))
+        append(buffer, u8((t.seconds >> 16) & 0xff))
+        append(buffer, u8((t.seconds >> 8) & 0xff))
+        append(buffer, u8(t.seconds & 0xff))
+        append(buffer, u8((t.frac >> 24) & 0xff))
+        append(buffer, u8((t.frac >> 16) & 0xff))
+        append(buffer, u8((t.frac >> 8) & 0xff))
+        append(buffer, u8(t.frac & 0xff))
+    case OscColor:
+        c := value.(OscColor)
+        append(buffer, c.r)
+        append(buffer, c.g)
+        append(buffer, c.b)
+        append(buffer, c.a)
+    case OscMidi:
+        m := value.(OscMidi)
+        append(buffer, m.port_id)
+        append(buffer, m.status)
+        append(buffer, m.data1)
+        append(buffer, m.data2)
+    case rune:
+        v := value.(rune)
+        bits := u32(v)
+        append(buffer, u8((bits >> 24) & 0xff))
+        append(buffer, u8((bits >> 16) & 0xff))
+        append(buffer, u8((bits >> 8) & 0xff))
+        append(buffer, u8(bits & 0xff))
+    case []OscValue:
+        arr := value.([]OscValue)
+        for elem in arr {
+            append_osc_value(buffer, elem)
+        }
+    case:
+        // skip unknown type
+        return
     }
 }

@@ -26,7 +26,8 @@ filter_messages :: proc(packet: ^OscPacket, callback: proc(msg: ^OscMessage)) {
         bundle := packet.bundle;
         for pac in bundle.contents {
             if pac.kind == OscPacketKind.message {
-                callback(&pac.msg);
+                msg := pac.msg;
+                callback(&msg);
             }
         }
     }
@@ -42,9 +43,9 @@ filter_address :: proc(packet: ^OscPacket, address: string, callback: proc(msg: 
         bundle := packet.bundle;
         for pac in bundle.contents {
             if pac.kind == OscPacketKind.message {
-                msg := &pac.msg;
+                msg := pac.msg;
                 if msg.address == address {
-                    callback(msg);
+                    callback(&msg);
                 }
             }
         }
