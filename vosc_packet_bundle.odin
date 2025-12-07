@@ -14,7 +14,7 @@ read_bundle :: proc(payload: []u8, i: int) -> (OscBundle, bool) {
         return OscBundle{}, false;
     }
     idx = next_idx;
-    contents: []OscPacket = make([]OscPacket, 0);
+    contents := make([dynamic]OscPacket, 0);
     for idx < len(payload) {
         if idx + 4 > len(payload) {
             break;
@@ -31,10 +31,10 @@ read_bundle :: proc(payload: []u8, i: int) -> (OscBundle, bool) {
         if !ok {
             return OscBundle{}, false;
         }
-        contents.append(packet);
+        append(&contents, packet);
         idx += size;
     }
-    return OscBundle{time = time, contents = contents}, true;
+    return OscBundle{time = time, contents = contents[:]}, true;
 }
 
 // Read an OscPacket from payload, starting at index i
