@@ -38,6 +38,8 @@ delete_osc_bundle :: proc(bundle: OscBundle) {
     for c in bundle.contents {
         delete_osc_packet(c)
     }
+
+    delete(bundle.contents)
 }
 
 // Read an OscBundle from payload, starting at index i
