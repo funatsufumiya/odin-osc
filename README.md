@@ -2,7 +2,7 @@
 
 A pure Odin implementation of the [OSC(Open Sound Control) 1.0](https://opensoundcontrol.stanford.edu/spec-1_0.html) protocol.
 
-Ported from [funatsufumiya/vosc](https://github.com/funatsufumiya/vosc)
+Ported from [funatsufumiya/vosc](https://github.com/funatsufumiya/vosc) (based on [Okabintaro/nosc](https://github.com/Okabintaro/nosc))
 
 ## Usage
 
