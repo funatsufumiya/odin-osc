@@ -28,8 +28,10 @@ main :: proc() {
 
     fmt.printfln("OSC listening to {}:{}", "0.0.0.0", 9000)
 
+    // // WARNING: dynamic slice cannot be used for net.recv_udp, because of C implementation
     // buf := make([dynamic]u8)
     // defer delete(buf)
+
     buf : [2048]u8
     buf = {}
 
