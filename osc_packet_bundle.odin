@@ -190,7 +190,7 @@ add_bundle :: proc(buffer: ^[dynamic]u8, bundle: OscBundle) {
         size := len(tmp_buf) - pre_idx
 
         when VERBOSE {
-            fmt.printfln("add_bundle: packet {}: {}", i, tmp_buf[pre_idx:size])
+            fmt.printfln("add_bundle: packet {}: {}", i, tmp_buf[pre_idx:pre_idx+size])
         }
 
         when VERBOSE {
@@ -198,7 +198,7 @@ add_bundle :: proc(buffer: ^[dynamic]u8, bundle: OscBundle) {
         }
 
         append_u32(buffer, u32(size))
-        append_slice(buffer, tmp_buf[:])
+        append_slice(buffer, tmp_buf[pre_idx:pre_idx+size])
 
         i += 1
     }
