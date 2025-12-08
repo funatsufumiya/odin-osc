@@ -23,14 +23,14 @@ OscPacket :: struct {
 
 filter_messages :: proc(packet: ^OscPacket, callback: proc(msg: ^OscMessage)) {
     if packet.kind == OscPacketKind.message {
-        callback(&packet.msg);
+        callback(&packet.msg)
     } else if packet.kind == OscPacketKind.bundle {
-        bundle := packet.bundle;
+        bundle := packet.bundle
         // fmt.printfln("time: {}", bundle.time)
         for pac in bundle.contents {
             if pac.kind == OscPacketKind.message {
-                msg := pac.msg;
-                callback(&msg);
+                msg := pac.msg
+                callback(&msg)
             }
         }
     }
@@ -38,18 +38,18 @@ filter_messages :: proc(packet: ^OscPacket, callback: proc(msg: ^OscMessage)) {
 
 filter_address :: proc(packet: ^OscPacket, address: string, callback: proc(msg: ^OscMessage)) {
     if packet.kind == OscPacketKind.message {
-        msg := &packet.msg;
+        msg := &packet.msg
         if msg.address == address {
-            callback(msg);
+            callback(msg)
         }
     } else if packet.kind == OscPacketKind.bundle {
-        bundle := packet.bundle;
+        bundle := packet.bundle
         // fmt.printfln("time: {}", bundle.time)
         for pac in bundle.contents {
             if pac.kind == OscPacketKind.message {
-                msg := pac.msg;
+                msg := pac.msg
                 if msg.address == address {
-                    callback(&msg);
+                    callback(&msg)
                 }
             }
         }

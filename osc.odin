@@ -107,11 +107,11 @@ append_u64 :: proc (buffer: ^[dynamic]u8, v: u64) {
 }
 
 fraction_to_nano :: proc(fraction: u32) -> u32 {
-    return u32((u64(fraction) * 1_000_000_000) / (1 << 32));
+    return u32((u64(fraction) * 1_000_000_000) / (1 << 32))
 }
 
 nano_to_fraction :: proc(nanoseconds: u32) -> u32 {
-    return u32((u64(nanoseconds) * (1 << 32)) / 1_000_000_000);
+    return u32((u64(nanoseconds) * (1 << 32)) / 1_000_000_000)
 }
 
 is_immediate :: proc(t: OscTime) -> bool {
