@@ -101,6 +101,39 @@ for {
 
 see [receiver plain example](./examples/example_receiver_plain/main.odin).
 
+```odin
+// NOTE: partial code, not full code
+
+buf : [2048]u8
+buf = {}
+
+for {
+    bytes_read, remote_endpoint, recv_err := net.recv_udp(udp_socket, buf[:])
+    if recv_err != net.UDP_Recv_Error.None || bytes_read == 0 {
+        continue
+    }
+
+    fmt.printfln("bytes_read: {}", bytes_read)
+
+    packet, err := osc.read_packet(buf[:bytes_read])
+    defer osc.delete_osc_packet(packet)
+
+    if err != nil {
+        fmt.eprintfln("failed to parse OSC packet: {}", err)
+        continue
+    }
+
+    fmt.printfln("{}", packet)
+
+    // results for example:
+
+    // bytes_read: 64
+    // OscBundle{time = OscTime{seconds = 3974158153, frac = 2931715041}, contents = [OscMessage{address = "/_samplerate", args = [60]}, OscMessage{address = "/chan1", args = [0.60837448]}]}
+    // bytes_read: 32
+    // OscMessage{address = "/hello", args = [1, 2, "hello"]}
+}
+```
+
 ## Tests
 
 ```bash
