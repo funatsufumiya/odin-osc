@@ -41,6 +41,8 @@ main :: proc() {
 		}
 
 		packet, err := osc.read_packet(buf[:bytes_read])
+        defer osc.delete_osc_packet(packet)
+
 		if err != nil {
 			fmt.eprintfln("failed to parse OSC packet: {}", err)
 			continue
