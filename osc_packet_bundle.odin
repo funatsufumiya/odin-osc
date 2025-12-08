@@ -1,5 +1,7 @@
 package osc
 
+import "core:mem"
+
 VERBOSE :: #config(VERBOSE, false)
 
 ReadPacketBundleMessageError :: union {
@@ -22,9 +24,20 @@ ReadBundleError :: enum {
     READ_PACKET_FAILED
 }
 
+delete_osc_packet :: proc(packet: OscPacket) {
+    delete_osc_bundle(packet.bundle)
+    delete_osc_message(packet.msg)
+}
+
+delete_osc_bundle :: proc(bundle: OscBundle) {
+    for c in bundle.contents {
+        delete_osc_packet(c)
+    }
+}
+
 // Read an OscBundle from payload, starting at index i
 // returns error at last parameter
-read_bundle :: proc(payload: []u8, i: int) -> (OscBundle, ReadBundleError) {
+read_bundle :: proc(payload: []u8, i: int, allocator: mem.Allocator = context.allocator) -> (OscBundle, ReadBundleError) {
     if len(payload) < 12 {
         return OscBundle{}, .LENGTH_TOO_SHORT;
     }
@@ -37,7 +50,7 @@ read_bundle :: proc(payload: []u8, i: int) -> (OscBundle, ReadBundleError) {
         return OscBundle{}, .OSC_TIME_PARSE_FAILED;
     }
     idx = next_idx;
-    contents := make([dynamic]OscPacket, 0);
+    contents := make([dynamic]OscPacket, 0, allocator);
     for idx < len(payload) {
         if idx + 4 > len(payload) {
             break;
@@ -51,7 +64,7 @@ read_bundle :: proc(payload: []u8, i: int) -> (OscBundle, ReadBundleError) {
         if idx + size > len(payload) {
             return OscBundle{}, .OSC_BUNDLE_SIZE_MISMATCH;
         }
-        packet, err := read_packet(payload[idx:idx+size]);
+        packet, err := read_packet(payload[idx:idx+size], allocator);
         if err != nil {
             return OscBundle{}, .READ_PACKET_FAILED;
         }
@@ -62,7 +75,7 @@ read_bundle :: proc(payload: []u8, i: int) -> (OscBundle, ReadBundleError) {
 }
 
 // Read an OscPacket from payload, starting at index i
-read_packet :: proc(payload: []u8) -> (OscPacket, ReadPacketBundleMessageError) {
+read_packet :: proc(payload: []u8, allocator: mem.Allocator = context.allocator) -> (OscPacket, ReadPacketBundleMessageError) {
     if len(payload) < 4 {
         return OscPacket{}, ReadPacketError.LENGTH_TOO_SHORT;
     }
@@ -73,7 +86,7 @@ read_packet :: proc(payload: []u8) -> (OscPacket, ReadPacketBundleMessageError) 
         }
         return OscPacket{kind = OscPacketKind.bundle, bundle = bundle}, nil;
     } else if payload[0] == '/' {
-        msg, _, err := read_message(payload, 0);
+        msg, _, err := read_message(payload, 0, allocator);
         if err != nil {
             return OscPacket{}, err;
         }
@@ -112,8 +125,8 @@ add_packet :: proc(buffer: ^[dynamic]u8, packet: OscPacket) {
 }
 
 // Serialize the given OscBundle to a new buffer and return it
-dgram_bundle :: proc(bundle: OscBundle) -> [dynamic]u8 {
-    dgram := make([dynamic]u8);
+dgram_bundle :: proc(bundle: OscBundle, allocator: mem.Allocator = context.allocator) -> [dynamic]u8 {
+    dgram := make([dynamic]u8, allocator);
     add_bundle(&dgram, bundle);
     return dgram;
 }
