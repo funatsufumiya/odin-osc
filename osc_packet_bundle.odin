@@ -2,8 +2,6 @@ package osc
 
 import "core:mem"
 
-VERBOSE :: #config(VERBOSE, false)
-
 ReadPacketBundleMessageError :: union {
     ReadBundleError,
     ReadPacketError,

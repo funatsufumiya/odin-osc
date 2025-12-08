@@ -1,9 +1,20 @@
+#+feature global-context
+
 package osc
 
 import "core:fmt"
 import "core:mem"
 import "core:strings"
 import "core:math"
+
+VERBOSE :: #config(VERBOSE, false)
+
+@(init)
+init_osc :: proc() {
+    when VERBOSE {
+        fmt.printfln("[debug] VERBOSE=true")
+    }
+}
 
 // Error types
 
