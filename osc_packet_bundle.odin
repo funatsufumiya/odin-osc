@@ -140,7 +140,7 @@ read_packet :: proc(payload: []u8, allocator: mem.Allocator = context.allocator)
         return OscPacket{}, ReadPacketError.LENGTH_TOO_SHORT
     }
     if payload[0] == '#' {
-        bundle, err := read_bundle(payload, 0)
+        bundle, err := read_bundle(payload, 0, allocator)
         if err != nil {
             return OscPacket{}, err
         }
