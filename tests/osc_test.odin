@@ -188,8 +188,10 @@ test_roundtrip_bundle :: proc(t: ^testing.T) {
     msg2 := osc.OscMessage{address = "/bar", args = {"baz"}}
     packet1 : osc.OscPacket = msg1
     packet2 : osc.OscPacket = msg2
+    want_osc_time := osc.OscTime{seconds = 123, frac = 456}
     bundle := osc.OscBundle{
-        time = osc.OscTime{seconds = 123, frac = 456},
+        time = osc.to_time(want_osc_time),
+        // time = time.now(),
         contents = {packet1, packet2},
     }
 
@@ -203,8 +205,11 @@ test_roundtrip_bundle :: proc(t: ^testing.T) {
     testing.expect_value(t, decode_err, nil)
 
     if decode_err == nil {
-        testing.expect_value(t, decoded.time.seconds, bundle.time.seconds)
-        testing.expect_value(t, decoded.time.frac, bundle.time.frac)
+        dec_osc_time := osc.from_time(decoded.time)
+        testing.expect_value(t, dec_osc_time.seconds, want_osc_time.seconds)
+        // testing.expect_value(t, dec_osc_time.frac, want_osc_time.frac)
+        frac_diff : i64 = abs(i64(dec_osc_time.frac) - i64(want_osc_time.frac))
+        testing.expect(t, frac_diff < 10, "frac_diff < 10 failed")
         testing.expect_value(t, len(decoded.contents), len(bundle.contents))
 
         for i in 0..<len(bundle.contents) {
@@ -269,7 +274,8 @@ test_roundtrip_packet :: proc(t: ^testing.T) {
     msg2 := osc.OscMessage{address = "/b", args = {f32(2.0)}}
     packet1 : osc.OscPacket = msg1
     packet2 : osc.OscPacket = msg2
-    bundle := osc.OscBundle{time = osc.OscTime{seconds = 1, frac = 2}, contents = {packet1, packet2}}
+    want_osc_time := osc.OscTime{seconds = 1, frac = 2}
+    bundle := osc.OscBundle{time = osc.to_time(want_osc_time), contents = {packet1, packet2}}
     packet_bundle : osc.OscPacket = bundle
 
     buf_bundle := make([dynamic]u8)
@@ -282,8 +288,11 @@ test_roundtrip_packet :: proc(t: ^testing.T) {
     testing.expect_value(t, bundle_decode_err, nil)
 
     if bundle_decode_err == nil {
-        testing.expect_value(t, decoded_bundle.(osc.OscBundle).time.seconds, bundle.time.seconds)
-        testing.expect_value(t, decoded_bundle.(osc.OscBundle).time.frac, bundle.time.frac)
+        dec_osc_time := osc.from_time(decoded_bundle.(osc.OscBundle).time)
+        testing.expect_value(t, dec_osc_time.seconds, want_osc_time.seconds)
+        // testing.expect_value(t, dec_osc_time.frac, want_osc_time.frac)
+        frac_diff : i64 = abs(i64(dec_osc_time.frac) - i64(want_osc_time.frac))
+        testing.expect(t, frac_diff < 10, "frac_diff < 10 failed")
         testing.expect_value(t, len(decoded_bundle.(osc.OscBundle).contents), len(bundle.contents))
 
         for i in 0..<len(bundle.contents) {
