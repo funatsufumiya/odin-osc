@@ -7,10 +7,6 @@ import "core:mem"
 import vosc "../.."
 import util "../example_util"
 
-ipv4_to_str :: proc(addr: net.IP4_Address, allocator: mem.Allocator = context.allocator) -> string {
-    return fmt.aprintf("{}.{}.{}.{}", addr[0], addr[1], addr[2], addr[3], allocator=allocator)
-}
-
 main :: proc() {
 	util.debug_tracking_allocator_init()
 
@@ -37,7 +33,7 @@ main :: proc() {
 		fmt.eprintfln("failed to send UDP: {}", send_err)
 		return
 	}
-    addr_str := ipv4_to_str(endpoint.address.(net.IP4_Address))
+    addr_str := util.ip_address_to_str(endpoint.address)
 	defer delete(addr_str)
 	fmt.printfln("OSC sent to {}:{} ({} bytes)", addr_str, endpoint.port, bytes_written)
 	fmt.printfln("Content: {}", msg)

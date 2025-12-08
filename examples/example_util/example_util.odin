@@ -4,8 +4,32 @@ package example_util
 
 import "core:fmt"
 import "core:mem"
+import "core:net"
 
 debug_tracking_allocator_or_not: Maybe(mem.Tracking_Allocator) = nil
+
+ipv6_to_str :: proc(addr: net.IP6_Address, allocator: mem.Allocator = context.allocator) -> string {
+    return fmt.aprintf("{}:{}:{}:{}:{}:{}:{}:{}",
+        addr[0], addr[1], addr[2], addr[3],
+        addr[4], addr[5], addr[6], addr[7],
+        allocator=allocator)
+}
+
+ipv4_to_str :: proc(addr: net.IP4_Address, allocator: mem.Allocator = context.allocator) -> string {
+    return fmt.aprintf("{}.{}.{}.{}",
+        addr[0], addr[1], addr[2], addr[3], allocator=allocator)
+}
+
+ip_address_to_str :: proc(addr: net.Address, allocator: mem.Allocator = context.allocator) -> string {
+    switch _ in addr {
+        case net.IP4_Address:
+            return ipv4_to_str(addr.(net.IP4_Address))
+        case net.IP6_Address:
+            return ipv6_to_str(addr.(net.IP6_Address))
+    }
+
+    panic("unreachable")
+}
 
 debug_tracking_allocator_init :: proc() {
     // dummy function, do nothing relly here.

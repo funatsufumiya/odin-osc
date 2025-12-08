@@ -26,7 +26,10 @@ main :: proc() {
         return
     }
 
-    fmt.printfln("OSC listening to {}:{}", "0.0.0.0", 9000)
+    addr_str := util.ip_address_to_str(endpoint.address)
+	defer delete(addr_str)
+
+    fmt.printfln("OSC listening to {}:{}", addr_str, endpoint.port)
 
     // // WARNING: dynamic slice cannot be used for net.recv_udp, because of C implementation
     // buf := make([dynamic]u8)
