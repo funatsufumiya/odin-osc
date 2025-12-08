@@ -99,9 +99,7 @@ for {
 
 ### Receiver (plain)
 
-***WIP***
-
-Currently example not ready. Please check implmentation of filter address if you need to parse OscBundle properly.
+see [receiver plain example](./examples/example_receiver_plain/main.odin).
 
 ## Tests
 
