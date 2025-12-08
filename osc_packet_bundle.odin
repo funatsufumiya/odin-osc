@@ -20,8 +20,8 @@ ReadBundleError :: enum {
     LENGTH_TOO_SHORT,
     HEADER_MISMATCH,
     OSC_TIME_PARSE_FAILED,
+    OSC_BUNDLE_SIZE_PARSE_FAILED,
     OSC_BUNDLE_SIZE_TOO_SHORT,
-    OSC_BUNDLE_SIZE_MISMATCH,
     READ_PACKET_FAILED
 }
 
@@ -59,26 +59,35 @@ read_bundle :: proc(payload: []u8, i: int, allocator: mem.Allocator = context.al
 
     idx = next_idx
     contents := make([dynamic]OscPacket, 0, allocator)
+    i := 0
     for idx < len(payload) {
+        when VERBOSE {
+            fmt.printfln("read_bundle: reading contents {}, idx = {}, len payload = {}", i, idx, len(payload))
+        }
+
         if idx + 4 > len(payload) {
             break
         }
         bytes, new_idx := read_u32(payload, idx)
         size := int(bytes)
+        when VERBOSE {
+            fmt.printfln("read_bundle: packet size {}", size)
+        }
         if size < 0 {
-            return OscBundle{}, .OSC_BUNDLE_SIZE_TOO_SHORT
+            return OscBundle{}, .OSC_BUNDLE_SIZE_PARSE_FAILED
         }
         if idx + size > len(payload) {
             when VERBOSE {
-                fmt.printfln("read_bundle: OSC_BUNDLE_SIZE_MISMATCH, info below:")
+                fmt.printfln("read_bundle: OSC_BUNDLE_SIZE_TOO_SHORT, info below:")
+                fmt.printfln("size specified: {}", size)
+                fmt.printfln("size left: {}", len(payload) - idx)
                 fmt.printfln("payload: {}", payload)
                 fmt.printfln("idx: {}", idx)
                 fmt.printfln("payload[idx]: {}", payload[idx])
                 fmt.printfln("bytes: {}", bytes)
-                fmt.printfln("size: {}", size)
             }
 
-            return OscBundle{}, .OSC_BUNDLE_SIZE_MISMATCH
+            return OscBundle{}, .OSC_BUNDLE_SIZE_TOO_SHORT
         }
         idx = new_idx
         packet, err := read_packet(payload[idx:idx+size], allocator)
@@ -92,7 +101,13 @@ read_bundle :: proc(payload: []u8, i: int, allocator: mem.Allocator = context.al
 
             return OscBundle{}, .READ_PACKET_FAILED
         }
+        when VERBOSE {
+                fmt.printfln("read_bundle: content {} = {}", i, packet)
+        }
         append(&contents, packet)
+        idx += size
+
+        i += 1
     }
     return OscBundle{time = time, contents = contents[:]}, nil
 }
@@ -135,7 +150,16 @@ add_bundle :: proc(buffer: ^[dynamic]u8, bundle: OscBundle) {
         fmt.printfln("add_bundle: time {}", bundle.time)
     }
 
+    when VERBOSE {
+        fmt.printfln("add_bundle: contents = {}", bundle.contents)
+    }
+
+    i := 0
     for packet in bundle.contents {
+        when VERBOSE {
+            fmt.printfln("add_bundle: add content {}", i)
+        }
+
         tmp_buf_len := len(tmp_buf)
         tmp_buf_len = 0
         add_packet(&tmp_buf, packet)
@@ -147,6 +171,12 @@ add_bundle :: proc(buffer: ^[dynamic]u8, bundle: OscBundle) {
 
         append_u32(buffer, u32(size))
         append_slice(buffer, tmp_buf[:])
+
+        i += 1
+    }
+
+    when VERBOSE {
+        fmt.printfln("add_bundle: len(contents) = {}", i)
     }
 }
 
