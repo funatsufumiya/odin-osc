@@ -104,5 +104,3 @@ $ odin test tests
 ## License
 
 see [LICENSE](./LICENSE).
-
-Please note that the original [Okabintaro/nosc](https://github.com/Okabintaro/nosc) (base code of [osc](https://github.com/funatsufumiya/osc)) contains codes by [treeform](https://github.com/treeform) codes, see [LICENSE_treeform](./LICENSE_treeform) and [original README](https://github.com/Okabintaro/nosc/blob/master/README.md).
