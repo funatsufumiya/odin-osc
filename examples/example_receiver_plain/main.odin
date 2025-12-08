@@ -3,7 +3,7 @@ package main
 import "core:fmt"
 import "core:net"
 import "core:mem"
-import vosc "../.."
+import osc "../.."
 import util "../example_util"
 
 main :: proc() {
@@ -40,18 +40,18 @@ main :: proc() {
 			continue
 		}
 
-		packet, err := vosc.read_packet(buf[:bytes_read])
+		packet, err := osc.read_packet(buf[:bytes_read])
 		if err != nil {
 			fmt.eprintfln("failed to parse OSC packet: {}", err)
 			continue
 		}
 
-		if packet.kind == vosc.OscPacketKind.message {
+		if packet.kind == osc.OscPacketKind.message {
 			fmt.printfln("{}", packet.msg)
-		} else if packet.kind == vosc.OscPacketKind.bundle {
+		} else if packet.kind == osc.OscPacketKind.bundle {
 			fmt.printfln("bundle time: {}", packet.bundle.time)
 			for pac in packet.bundle.contents {
-				if pac.kind == vosc.OscPacketKind.message {
+				if pac.kind == osc.OscPacketKind.message {
 					fmt.printfln("{}", pac.msg)
 				}
 			}

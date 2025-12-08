@@ -1,4 +1,4 @@
-package vosc
+package osc
 
 VERBOSE :: #config(VERBOSE, false)
 

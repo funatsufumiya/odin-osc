@@ -4,7 +4,7 @@ import "core:fmt"
 import "core:net"
 import "core:strings"
 import "core:mem"
-import vosc "../.."
+import osc "../.."
 import util "../example_util"
 
 main :: proc() {
@@ -21,12 +21,12 @@ main :: proc() {
 
     udp_socket := socket.(net.UDP_Socket)
 
-	msg := vosc.OscMessage{address = "/hello", args = {int(1), f32(2.3), "world"}}
+	msg := osc.OscMessage{address = "/hello", args = {int(1), f32(2.3), "world"}}
 
 	buf := make([dynamic]u8)
 	defer delete(buf)
 
-	vosc.add_message(&buf, msg)
+	osc.add_message(&buf, msg)
 
 	bytes_written, send_err := net.send_udp(udp_socket, buf[:], endpoint)
 	if send_err != net.UDP_Send_Error.None {

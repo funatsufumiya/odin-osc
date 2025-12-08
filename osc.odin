@@ -1,4 +1,4 @@
-package vosc
+package osc
 
 import "core:fmt"
 import "core:mem"

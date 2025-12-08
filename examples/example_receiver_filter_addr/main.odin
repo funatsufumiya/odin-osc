@@ -3,7 +3,7 @@ package main
 import "core:fmt"
 import "core:net"
 import "core:mem"
-import vosc "../.."
+import osc "../.."
 import util "../example_util"
 
 main :: proc() {
@@ -42,17 +42,17 @@ main :: proc() {
 
 		// fmt.printfln("bytes_read: {}", bytes_read)
 
-		packet, err := vosc.read_packet(buf[:bytes_read])
+		packet, err := osc.read_packet(buf[:bytes_read])
 		if err != nil {
 			fmt.eprintfln("failed to parse OSC packet: {}", err)
 			continue
 		}
 
-		vosc.filter_address(&packet, "/hello", proc(msg: ^vosc.OscMessage) {
+		osc.filter_address(&packet, "/hello", proc(msg: ^osc.OscMessage) {
 			fmt.printfln("{}", msg.address)
 			fmt.printfln("{}", msg.args)
 		})
-		vosc.filter_address(&packet, "/test", proc(msg: ^vosc.OscMessage) {
+		osc.filter_address(&packet, "/test", proc(msg: ^osc.OscMessage) {
 			fmt.printfln("{}", msg.address)
 			fmt.printfln("{}", msg.args)
 		})

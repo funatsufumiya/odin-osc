@@ -1,7 +1,7 @@
-// This file implements the filtering functionality for vosc messages.
+// This file implements the filtering functionality for osc messages.
 // It exports functions for filtering messages based on specific criteria.
 
-package vosc
+package osc
 
 OscPacketKind :: enum {
     message,
