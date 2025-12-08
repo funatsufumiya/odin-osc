@@ -69,7 +69,7 @@ main :: proc() {
         // results for example:
 
         // bytes_read: 64
-        // OscBundle{time = OscTime{seconds = 3974158153, frac = 2931715041}, contents = [OscMessage{address = "/_samplerate", args = [60]}, OscMessage{address = "/chan1", args = [0.60837448]}]}
+        // OscBundle{time = 2025-12-08 05:11:47.131840699 +0000 UTC, contents = [OscMessage{address = "/_samplerate", args = [60]}, OscMessage{address = "/chan1", args = [0.6064136]}]}
         // bytes_read: 32
         // OscMessage{address = "/hello", args = [1, 2, "hello"]}
     }
