@@ -42,8 +42,9 @@ read_bundle :: proc(payload: []u8, i: int) -> (OscBundle, ReadBundleError) {
         if idx + 4 > len(payload) {
             break;
         }
-        size := int(u32(payload[idx]) << 24 | u32(payload[idx+1]) << 16 | u32(payload[idx+2]) << 8 | u32(payload[idx+3]));
-        idx += 4;
+        bytes, new_idx := read_u32(payload, idx)
+        size := int(bytes)
+        idx = new_idx
         if size < 0 {
             return OscBundle{}, .OSC_BUNDLE_SIZE_TOO_SHORT;
         }
@@ -89,23 +90,14 @@ add_bundle :: proc(buffer: ^[dynamic]u8, bundle: OscBundle) {
 
     add_padded_str(buffer, "#bundle");
     append(buffer, u8(0));
-    append(buffer, u8((bundle.time.seconds >> 24) & 0xff));
-    append(buffer, u8((bundle.time.seconds >> 16) & 0xff));
-    append(buffer, u8((bundle.time.seconds >> 8) & 0xff));
-    append(buffer, u8(bundle.time.seconds & 0xff));
-    append(buffer, u8((bundle.time.frac >> 24) & 0xff));
-    append(buffer, u8((bundle.time.frac >> 16) & 0xff));
-    append(buffer, u8((bundle.time.frac >> 8) & 0xff));
-    append(buffer, u8(bundle.time.frac & 0xff));
+    append_u32(buffer, bundle.time.seconds)
+    append_u32(buffer, bundle.time.frac)
     for packet in bundle.contents {
         tmp_buf_len := len(tmp_buf);
         tmp_buf_len = 0;
         add_packet(&tmp_buf, packet);
         size := len(tmp_buf);
-        append(buffer, u8((size >> 24) & 0xff));
-        append(buffer, u8((size >> 16) & 0xff));
-        append(buffer, u8((size >> 8) & 0xff));
-        append(buffer, u8(size & 0xff));
+        append_u32(buffer, u32(size))
         append_slice(buffer, tmp_buf[:]);
     }
 }
