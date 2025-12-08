@@ -162,25 +162,29 @@ test_roundtrip_bundle :: proc(t: ^testing.T) {
 
     decoded, decode_err := osc.read_bundle(buf[:], 0)
     defer osc.delete_osc_bundle(decoded)
+
     testing.expect_value(t, decode_err, nil)
-    testing.expect_value(t, decoded.time.seconds, bundle.time.seconds)
-    testing.expect_value(t, decoded.time.frac, bundle.time.frac)
-    testing.expect_value(t, len(decoded.contents), len(bundle.contents))
-    for i in 0..<len(bundle.contents) {
-        want := bundle.contents[i].msg
-        result := decoded.contents[i].msg
-        testing.expect_value(t, result.address, want.address)
-        testing.expect_value(t, len(result.args), len(want.args))
-        for j in 0..<len(want.args) {
-            #partial switch _ in result.args[j] {
-                case int:
-                    testing.expect_value(t, result.args[j].(int), want.args[j].(int))
-                case f32:
-                    testing.expect_value(t, result.args[j].(f32), want.args[j].(f32))
-                case string:
-                    testing.expect_value(t, result.args[j].(string), want.args[j].(string))
-                case:
-                    // ignore
+
+    if decode_err == nil {
+        testing.expect_value(t, decoded.time.seconds, bundle.time.seconds)
+        testing.expect_value(t, decoded.time.frac, bundle.time.frac)
+        testing.expect_value(t, len(decoded.contents), len(bundle.contents))
+        for i in 0..<len(bundle.contents) {
+            want := bundle.contents[i].msg
+            result := decoded.contents[i].msg
+            testing.expect_value(t, result.address, want.address)
+            testing.expect_value(t, len(result.args), len(want.args))
+            for j in 0..<len(want.args) {
+                #partial switch _ in result.args[j] {
+                    case int:
+                        testing.expect_value(t, result.args[j].(int), want.args[j].(int))
+                    case f32:
+                        testing.expect_value(t, result.args[j].(f32), want.args[j].(f32))
+                    case string:
+                        testing.expect_value(t, result.args[j].(string), want.args[j].(string))
+                    case:
+                        // ignore
+                }
             }
         }
     }
@@ -236,27 +240,30 @@ test_roundtrip_packet :: proc(t: ^testing.T) {
     defer osc.delete_osc_packet(decoded_bundle)
 
     testing.expect_value(t, bundle_decode_err, nil)
-    testing.expect_value(t, decoded_bundle.kind, osc.OscPacketKind.bundle)
-    testing.expect_value(t, decoded_bundle.bundle.time.seconds, bundle.time.seconds)
-    testing.expect_value(t, decoded_bundle.bundle.time.frac, bundle.time.frac)
-    testing.expect_value(t, len(decoded_bundle.bundle.contents), len(bundle.contents))
 
-    for i in 0..<len(bundle.contents) {
-        want := bundle.contents[i].msg
-        result := decoded_bundle.bundle.contents[i].msg
-        testing.expect_value(t, result.address, want.address)
-        testing.expect_value(t, len(result.args), len(want.args))
+    if bundle_decode_err == nil {
+        testing.expect_value(t, decoded_bundle.kind, osc.OscPacketKind.bundle)
+        testing.expect_value(t, decoded_bundle.bundle.time.seconds, bundle.time.seconds)
+        testing.expect_value(t, decoded_bundle.bundle.time.frac, bundle.time.frac)
+        testing.expect_value(t, len(decoded_bundle.bundle.contents), len(bundle.contents))
 
-        for j in 0..<len(want.args) {
-            #partial switch _ in result.args[j] {
-                case int:
-                    testing.expect_value(t, result.args[j].(int), want.args[j].(int))
-                case f32:
-                    testing.expect_value(t, result.args[j].(f32), want.args[j].(f32))
-                case string:
-                    testing.expect_value(t, result.args[j].(string), want.args[j].(string))
-                case:
-                    // ignore
+        for i in 0..<len(bundle.contents) {
+            want := bundle.contents[i].msg
+            result := decoded_bundle.bundle.contents[i].msg
+            testing.expect_value(t, result.address, want.address)
+            testing.expect_value(t, len(result.args), len(want.args))
+
+            for j in 0..<len(want.args) {
+                #partial switch _ in result.args[j] {
+                    case int:
+                        testing.expect_value(t, result.args[j].(int), want.args[j].(int))
+                    case f32:
+                        testing.expect_value(t, result.args[j].(f32), want.args[j].(f32))
+                    case string:
+                        testing.expect_value(t, result.args[j].(string), want.args[j].(string))
+                    case:
+                        // ignore
+                }
             }
         }
     }
