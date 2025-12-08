@@ -2,7 +2,7 @@ package osc
 
 VERBOSE :: #config(VERBOSE, false)
 
-ReadPacketOrBundleError :: union {
+ReadPacketBundleMessageError :: union {
     ReadBundleError,
     ReadPacketError,
     ReadMessageError
@@ -62,7 +62,7 @@ read_bundle :: proc(payload: []u8, i: int) -> (OscBundle, ReadBundleError) {
 }
 
 // Read an OscPacket from payload, starting at index i
-read_packet :: proc(payload: []u8) -> (OscPacket, ReadPacketOrBundleError) {
+read_packet :: proc(payload: []u8) -> (OscPacket, ReadPacketBundleMessageError) {
     if len(payload) < 4 {
         return OscPacket{}, ReadPacketError.LENGTH_TOO_SHORT;
     }
