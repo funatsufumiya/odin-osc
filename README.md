@@ -97,7 +97,9 @@ for {
 
 ### Receiver (plain)
 
-WIP (currently example not ready. Please check implmentation of filter address)
+***WIP***
+
+Currently example not ready. Please check implmentation of filter address if you need to parse OscBundle properly.
 
 ## Tests
 
