@@ -28,8 +28,10 @@ main :: proc() {
 
     fmt.printfln("OSC listening to {}:{}", "0.0.0.0", 9000)
 
-    buf := make([dynamic]u8)
-    defer delete(buf)
+    // buf := make([dynamic]u8)
+    // defer delete(buf)
+    buf : [2048]u8
+    buf = {}
 
     for {
         bytes_read, remote_endpoint, recv_err := net.recv_udp(udp_socket, buf[:])
