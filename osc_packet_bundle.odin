@@ -11,11 +11,13 @@ ReadPacketBundleMessageError :: union {
 }
 
 ReadPacketError :: enum {
+    NONE,
     LENGTH_TOO_SHORT,
     PAYLOAD_NOT_FOUND
 }
 
 ReadBundleError :: enum {
+    NONE,
     LENGTH_TOO_SHORT,
     HEADER_MISMATCH,
     OSC_TIME_PARSE_FAILED,

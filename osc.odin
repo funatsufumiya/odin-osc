@@ -8,6 +8,7 @@ import "core:math"
 // Error types
 
 ReadMessageError :: enum {
+    NONE,
     LENGTH_TOO_SHORT,
     WRONG_OSC_ADDR,
     PARSE_FAILED
