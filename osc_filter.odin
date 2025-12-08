@@ -5,21 +5,6 @@ package osc
 
 import "core:fmt"
 
-OscPacketKind :: enum {
-    message,
-    bundle,
-}
-
-OscBundle :: struct {
-    time: OscTime,
-    contents: []OscPacket,
-}
-
-OscPacket :: union {
-    OscMessage,
-    OscBundle,
-}
-
 filter_messages :: proc(packet: ^OscPacket, callback: proc(msg: ^OscMessage)) {
     switch _ in packet {
         case OscMessage:

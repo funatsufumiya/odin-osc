@@ -3,6 +3,16 @@ package osc
 import "core:mem"
 import "core:fmt"
 
+OscBundle :: struct {
+    time: OscTime,
+    contents: []OscPacket,
+}
+
+OscPacket :: union {
+    OscMessage,
+    OscBundle,
+}
+
 ReadPacketBundleMessageError :: union {
     ReadBundleError,
     ReadPacketError,

@@ -97,7 +97,7 @@ for {
 
 ### Receiver (plain)
 
-see [plain receiver example](./examples/example_receiver_plain/main.odin).
+WIP (currently example not ready. Please check implmentation of filter address)
 
 ## Tests
 
