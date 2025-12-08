@@ -39,9 +39,11 @@ main :: proc() {
             continue
         }
 
-        packet, parse_err := vosc.read_packet(buf[:bytes_read])
-        if parse_err != false {
-            fmt.eprintfln("failed to parse OSC packet")
+        fmt.printfln("bytes_read: {}", bytes_read)
+
+        packet, err := vosc.read_packet(buf[:bytes_read])
+        if err != nil {
+            fmt.eprintfln("failed to parse OSC packet: {}", err)
             continue
         }
 

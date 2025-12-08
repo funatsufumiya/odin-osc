@@ -5,6 +5,14 @@ import "core:mem"
 import "core:strings"
 import "core:math"
 
+// Error types
+
+ReadMessageError :: enum {
+    LENGTH_TOO_SHORT,
+    WRONG_OSC_ADDR,
+    PARSE_FAILED
+}
+
 // OscTime
 OscTime :: struct {
     seconds: u32,
@@ -252,28 +260,28 @@ read_u64 :: proc(payload: []u8, idx: int) -> (u64, int) {
 }
 
 // Read an OscMessage from payload, starting at index i
-// Returns: OscMessage, next index, ok
-read_message :: proc(payload: []u8, i: int, allocator: mem.Allocator = context.allocator) -> (OscMessage, int, bool) {
+// Returns: OscMessage, next index, err
+read_message :: proc(payload: []u8, i: int, allocator: mem.Allocator = context.allocator) -> (OscMessage, int, ReadMessageError) {
     idx := i
     if idx >= len(payload) {
-        return OscMessage{}, idx, false
+        return OscMessage{}, idx, .LENGTH_TOO_SHORT
     }
     if payload[idx] != '/' {
-        return OscMessage{}, idx, false
+        return OscMessage{}, idx, .WRONG_OSC_ADDR
     }
     // Read address
     address, next_idx, ok := read_padded_str(payload, idx)
     if !ok {
-        return OscMessage{}, idx, false
+        return OscMessage{}, idx, .PARSE_FAILED
     }
     idx = next_idx
     if idx >= len(payload) {
-        return OscMessage{address=address, args=make([]OscValue, 0, allocator)}, idx, true
+        return OscMessage{address=address, args=make([]OscValue, 0, allocator)}, idx, nil
     }
     // Read type tags
     type_tags, next_idx2, ok2 := read_padded_str(payload, idx)
     if !ok2 {
-        return OscMessage{}, idx, false
+        return OscMessage{}, idx, .PARSE_FAILED
     }
     idx = next_idx2
     // Parse arguments
@@ -286,28 +294,28 @@ read_message :: proc(payload: []u8, i: int, allocator: mem.Allocator = context.a
         case ',':
             continue
         case 'f':
-            if idx+4 > len(payload) { return OscMessage{}, idx, false; }
+            if idx+4 > len(payload) { return OscMessage{}, idx, .LENGTH_TOO_SHORT; }
             bits, new_idx := read_u32(payload, idx)
             idx = new_idx
             val := transmute(f32)(bits)
             append(&args, val)
         case 'i':
-            if idx+4 > len(payload) { return OscMessage{}, idx, false; }
+            if idx+4 > len(payload) { return OscMessage{}, idx, .LENGTH_TOO_SHORT; }
             bits, new_idx := read_u32(payload, idx)
             idx = new_idx
             val := int(bits)
             append(&args, val)
         case 's':
             str, next_idx3, ok := read_padded_str(payload, idx)
-            if !ok { return OscMessage{}, idx, false; }
+            if !ok { return OscMessage{}, idx, .PARSE_FAILED; }
             append(&args, str)
             idx = next_idx3
         case 'b':
-            if idx+4 > len(payload) { return OscMessage{}, idx, false; }
+            if idx+4 > len(payload) { return OscMessage{}, idx, .LENGTH_TOO_SHORT; }
             bits, new_idx := read_u32(payload, idx)
             idx = new_idx
             length := int(bits)
-            if length < 0 || idx+length > len(payload) { return OscMessage{}, idx, false; }
+            if length < 0 || idx+length > len(payload) { return OscMessage{}, idx, .LENGTH_TOO_SHORT; }
             val := payload[idx:idx+length]
             append(&args, OscBlob{blob=val})
             idx += padded4(length)
@@ -319,17 +327,17 @@ read_message :: proc(payload: []u8, i: int, allocator: mem.Allocator = context.a
             append(&args, OscNilValue{})
         case 't': // OscTime
             time, next_idx, ok := read_osc_time(payload, idx)
-            if !ok { return OscMessage{}, idx, false; }
+            if !ok { return OscMessage{}, idx, .LENGTH_TOO_SHORT; }
             append(&args, time)
             idx = next_idx
         case 'h': // OscBigIntValue (i64)
-            if idx+8 > len(payload) { return OscMessage{}, idx, false; }
+            if idx+8 > len(payload) { return OscMessage{}, idx, .LENGTH_TOO_SHORT; }
             bits, new_idx := read_u64(payload, idx)
             idx = new_idx
             val := OscBigIntValue{big_int_val = i64(bits)}
             append(&args, val)
         case 'd': // f64
-            if idx+8 > len(payload) { return OscMessage{}, idx, false; }
+            if idx+8 > len(payload) { return OscMessage{}, idx, .LENGTH_TOO_SHORT; }
             bits, new_idx := read_u64(payload, idx)
             idx = new_idx
             val := transmute(f64)(bits)
@@ -337,13 +345,13 @@ read_message :: proc(payload: []u8, i: int, allocator: mem.Allocator = context.a
         case 'I': // InfValue
             append(&args, OscInfValue{})
         case 'c': // rune (u32)
-            if idx+4 > len(payload) { return OscMessage{}, idx, false; }
+            if idx+4 > len(payload) { return OscMessage{}, idx, .LENGTH_TOO_SHORT; }
             bits, new_idx := read_u32(payload, idx)
             idx = new_idx
             append(&args, rune(bits))
             idx += 4
         case 'r': // OscColor
-            if idx+4 > len(payload) { return OscMessage{}, idx, false; }
+            if idx+4 > len(payload) { return OscMessage{}, idx, .LENGTH_TOO_SHORT; }
             val := OscColor{
                 r = payload[idx],
                 g = payload[idx+1],
@@ -353,7 +361,7 @@ read_message :: proc(payload: []u8, i: int, allocator: mem.Allocator = context.a
             append(&args, val)
             idx += 4
         case 'm': // OscMidi
-            if idx+4 > len(payload) { return OscMessage{}, idx, false; }
+            if idx+4 > len(payload) { return OscMessage{}, idx, .LENGTH_TOO_SHORT; }
             val := OscMidi{
                 port_id = payload[idx],
                 status  = payload[idx+1],
@@ -367,7 +375,7 @@ read_message :: proc(payload: []u8, i: int, allocator: mem.Allocator = context.a
             continue
         }
     }
-    return OscMessage{address=address, args=args[:]}, idx, true
+    return OscMessage{address=address, args=args[:]}, idx, nil
 }
 
 t_or_f :: proc(b: bool) -> u8 {

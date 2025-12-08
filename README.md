@@ -1,8 +1,5 @@
 # odin-osc
 
-> [!WARNING]
-> work-in-progress, not tested enough but probably works already.
-
 A pure Odin implementation of the [OSC(Open Sound Control) 1.0](https://opensoundcontrol.stanford.edu/spec-1_0.html) protocol.
 
 Ported from [funatsufumiya/vosc](https://github.com/funatsufumiya/vosc)
@@ -17,7 +14,7 @@ see [sender example](./examples/example_sender/main.odin).
 
 #### filter messages
 
-document WIP
+see [filter messages example](./examples/example_receiver_filter_msg/main.odin).
 
 #### filter addresses
 

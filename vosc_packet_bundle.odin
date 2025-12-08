@@ -1,17 +1,40 @@
 package vosc
 
+VERBOSE :: #config(VERBOSE, false)
+
+ReadPacketOrBundleError :: union {
+    ReadBundleError,
+    ReadPacketError,
+    ReadMessageError
+}
+
+ReadPacketError :: enum {
+    LENGTH_TOO_SHORT,
+    PAYLOAD_NOT_FOUND
+}
+
+ReadBundleError :: enum {
+    LENGTH_TOO_SHORT,
+    HEADER_MISMATCH,
+    OSC_TIME_PARSE_FAILED,
+    OSC_BUNDLE_SIZE_TOO_SHORT,
+    OSC_BUNDLE_SIZE_MISMATCH,
+    READ_PACKET_FAILED
+}
+
 // Read an OscBundle from payload, starting at index i
-read_bundle :: proc(payload: []u8, i: int) -> (OscBundle, bool) {
+// returns error at last parameter
+read_bundle :: proc(payload: []u8, i: int) -> (OscBundle, ReadBundleError) {
     if len(payload) < 12 {
-        return OscBundle{}, false;
+        return OscBundle{}, .LENGTH_TOO_SHORT;
     }
     if string(payload[i:i+8]) != "#bundle\x00" {
-        return OscBundle{}, false;
+        return OscBundle{}, .HEADER_MISMATCH;
     }
     idx := i + 8;
     time, next_idx, ok := read_osc_time(payload, idx);
     if !ok {
-        return OscBundle{}, false;
+        return OscBundle{}, .OSC_TIME_PARSE_FAILED;
     }
     idx = next_idx;
     contents := make([dynamic]OscPacket, 0);
@@ -22,40 +45,40 @@ read_bundle :: proc(payload: []u8, i: int) -> (OscBundle, bool) {
         size := int(u32(payload[idx]) << 24 | u32(payload[idx+1]) << 16 | u32(payload[idx+2]) << 8 | u32(payload[idx+3]));
         idx += 4;
         if size < 0 {
-            return OscBundle{}, false;
+            return OscBundle{}, .OSC_BUNDLE_SIZE_TOO_SHORT;
         }
         if idx + size > len(payload) {
-            return OscBundle{}, false;
+            return OscBundle{}, .OSC_BUNDLE_SIZE_MISMATCH;
         }
-        packet, ok := read_packet(payload[idx:idx+size]);
-        if !ok {
-            return OscBundle{}, false;
+        packet, err := read_packet(payload[idx:idx+size]);
+        if err != nil {
+            return OscBundle{}, .READ_PACKET_FAILED;
         }
         append(&contents, packet);
         idx += size;
     }
-    return OscBundle{time = time, contents = contents[:]}, true;
+    return OscBundle{time = time, contents = contents[:]}, nil;
 }
 
 // Read an OscPacket from payload, starting at index i
-read_packet :: proc(payload: []u8) -> (OscPacket, bool) {
+read_packet :: proc(payload: []u8) -> (OscPacket, ReadPacketOrBundleError) {
     if len(payload) < 4 {
-        return OscPacket{}, false;
+        return OscPacket{}, ReadPacketError.LENGTH_TOO_SHORT;
     }
     if payload[0] == '#' {
-        bundle, ok := read_bundle(payload, 0);
-        if !ok {
-            return OscPacket{}, false;
+        bundle, err := read_bundle(payload, 0);
+        if err != nil {
+            return OscPacket{}, err;
         }
-        return OscPacket{kind = OscPacketKind.bundle, bundle = bundle}, true;
+        return OscPacket{kind = OscPacketKind.bundle, bundle = bundle}, nil;
     } else if payload[0] == '/' {
-        msg, _, ok := read_message(payload, 0);
-        if !ok {
-            return OscPacket{}, false;
+        msg, _, err := read_message(payload, 0);
+        if err != nil {
+            return OscPacket{}, err;
         }
-        return OscPacket{kind = OscPacketKind.message, msg = msg}, true;
+        return OscPacket{kind = OscPacketKind.message, msg = msg}, nil;
     } else {
-        return OscPacket{}, false;
+        return OscPacket{}, ReadPacketError.PAYLOAD_NOT_FOUND;
     }
 }
 
