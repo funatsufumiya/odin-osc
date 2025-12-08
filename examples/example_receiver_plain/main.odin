@@ -57,9 +57,7 @@ main :: proc() {
         #partial switch _ in packet {
             case osc.OscBundle:
                 bundle := packet.(osc.OscBundle)
-                osc_time := bundle.time
-                t := osc.to_time(osc_time)
-                fmt.printfln("bundle time: {}", t)
+                fmt.printfln("bundle time: {}", bundle.time)
 
                 // result for example:
                 // bundle time: 2025-12-08 05:01:53.132265599 +0000 UTC

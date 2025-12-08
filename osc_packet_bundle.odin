@@ -2,9 +2,11 @@ package osc
 
 import "core:mem"
 import "core:fmt"
+import "core:time"
 
 OscBundle :: struct {
-    time: OscTime,
+    // time: OscTime,
+    time: time.Time,
     contents: []OscPacket,
 }
 
@@ -141,7 +143,8 @@ read_bundle :: proc(payload: []u8, i: int, allocator: mem.Allocator = context.al
         i += 1
     }
 
-    result_bundle := OscBundle{time = time, contents = contents[:]}
+    // result_bundle := OscBundle{time = time, contents = contents[:]}
+    result_bundle := OscBundle{time = to_time(time), contents = contents[:]}
 
     when VERBOSE {
         fmt.printfln("read_bundle: result_bundle = {}", result_bundle)
@@ -181,8 +184,9 @@ add_bundle :: proc(buffer: ^[dynamic]u8, bundle: OscBundle) {
     // append(buffer, u8(0))
     append_string(buffer, "#bundle\x00")
 
-    append_u32(buffer, bundle.time.seconds)
-    append_u32(buffer, bundle.time.frac)
+    osc_time := from_time(bundle.time)
+    append_u32(buffer, osc_time.seconds)
+    append_u32(buffer, osc_time.frac)
 
     when VERBOSE {
         fmt.printfln("add_bundle: time {}", bundle.time)
