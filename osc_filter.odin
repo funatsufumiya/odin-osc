@@ -3,6 +3,8 @@
 
 package osc
 
+import "core:fmt"
+
 OscPacketKind :: enum {
     message,
     bundle,
@@ -24,6 +26,7 @@ filter_messages :: proc(packet: ^OscPacket, callback: proc(msg: ^OscMessage)) {
         callback(&packet.msg);
     } else if packet.kind == OscPacketKind.bundle {
         bundle := packet.bundle;
+        // fmt.printfln("time: {}", bundle.time)
         for pac in bundle.contents {
             if pac.kind == OscPacketKind.message {
                 msg := pac.msg;
@@ -41,6 +44,7 @@ filter_address :: proc(packet: ^OscPacket, address: string, callback: proc(msg: 
         }
     } else if packet.kind == OscPacketKind.bundle {
         bundle := packet.bundle;
+        // fmt.printfln("time: {}", bundle.time)
         for pac in bundle.contents {
             if pac.kind == OscPacketKind.message {
                 msg := pac.msg;
