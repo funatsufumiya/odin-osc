@@ -79,10 +79,11 @@ append_int :: proc (buffer: ^[dynamic]u8, v: int) {
 }
 
 append_i32 :: proc (buffer: ^[dynamic]u8, v: i32) {
-    append(buffer, u8((u32(v) >> 24) & 0xff))
-    append(buffer, u8((u32(v) >> 16) & 0xff))
-    append(buffer, u8((u32(v) >> 8) & 0xff))
-    append(buffer, u8(u32(v) & 0xff))
+    bytes := transmute(u32)(v)
+    append(buffer, u8((u32(bytes) >> 24) & 0xff))
+    append(buffer, u8((u32(bytes) >> 16) & 0xff))
+    append(buffer, u8((u32(bytes) >> 8) & 0xff))
+    append(buffer, u8(u32(bytes) & 0xff))
 }
 
 append_u32 :: proc (buffer: ^[dynamic]u8, v: u32) {
@@ -259,6 +260,10 @@ read_u64 :: proc(payload: []u8, idx: int) -> (u64, int) {
     return bits, idx + 8
 }
 
+delete_osc_message :: proc(msg: OscMessage) {
+    delete(msg.args)
+}
+
 // Read an OscMessage from payload, starting at index i
 // Returns: OscMessage, next index, err
 read_message :: proc(payload: []u8, i: int, allocator: mem.Allocator = context.allocator) -> (OscMessage, int, ReadMessageError) {
@@ -303,7 +308,7 @@ read_message :: proc(payload: []u8, i: int, allocator: mem.Allocator = context.a
             if idx+4 > len(payload) { return OscMessage{}, idx, .LENGTH_TOO_SHORT; }
             bits, new_idx := read_u32(payload, idx)
             idx = new_idx
-            val := int(bits)
+            val := int(transmute(i32)(bits))
             append(&args, val)
         case 's':
             str, next_idx3, ok := read_padded_str(payload, idx)

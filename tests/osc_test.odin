@@ -105,3 +105,41 @@ test_add_midi :: proc(t: ^testing.T) {
     }
 }
 
+@(test)
+test_roundtrip_message :: proc(t: ^testing.T) {
+    msgs : []osc.OscMessage
+    msgs = {
+        osc.OscMessage{address = "/int", args = {int(42)}},
+        osc.OscMessage{address = "/float", args = {f32(3.14)}},
+        osc.OscMessage{address = "/str", args = {"hello"}},
+        osc.OscMessage{address = "/mix", args = {int(-1), f32(2.71), "abc"}},
+    }
+
+    for msg in msgs {
+        buf := make([dynamic]u8);
+        defer delete(buf);
+        osc.add_message(&buf, msg);
+
+        decoded, _, err := osc.read_message(buf[:], 0);
+        defer osc.delete_osc_message(decoded)
+
+        testing.expect(t, err == nil, "decode error");
+        testing.expect_value(t, decoded.address, msg.address);
+        testing.expect_value(t, len(decoded.args), len(msg.args));
+
+        for i in 0..<len(msg.args) {
+            want := msg.args[i]
+            result := decoded.args[i]
+            #partial switch _ in result {
+                case int:
+                    testing.expect_value(t, result.(int), want.(int))
+                case f32:
+                    testing.expect_value(t, result.(f32), want.(f32))
+                case string:
+                    testing.expect_value(t, result.(string), want.(string))
+                case:
+                    // just ignore
+            }
+        }
+    }
+}
