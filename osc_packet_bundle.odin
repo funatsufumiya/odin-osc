@@ -96,7 +96,11 @@ read_bundle :: proc(payload: []u8, i: int, allocator: mem.Allocator = context.al
             return OscBundle{}, .OSC_BUNDLE_SIZE_TOO_SHORT
         }
         idx = new_idx
-        fmt.printfln("read_bundle: reading packet idx = {}, size = {}", idx, size)
+
+        when VERBOSE {
+            fmt.printfln("read_bundle: reading packet idx = {}, size = {}", idx, size)
+        }
+
         packet, err := read_packet(payload[idx:idx+size], allocator)
 
         if err != nil {
@@ -111,6 +115,7 @@ read_bundle :: proc(payload: []u8, i: int, allocator: mem.Allocator = context.al
         }
 
         when VERBOSE {
+            fmt.printfln("read_bundle: packet {} payload: {}", i, payload[idx:idx+size])
             fmt.printfln("read_bundle: content {} = {}", i, packet)
         }
 
@@ -174,13 +179,19 @@ add_bundle :: proc(buffer: ^[dynamic]u8, bundle: OscBundle) {
     i := 0
     for packet in bundle.contents {
         when VERBOSE {
-            fmt.printfln("add_bundle: add content {}", i)
+            fmt.printfln("add_bundle: add content {}: {}", i, packet)
         }
+
+        pre_idx := len(tmp_buf)
 
         tmp_buf_len := len(tmp_buf)
         tmp_buf_len = 0
         add_packet(&tmp_buf, packet)
-        size := len(tmp_buf)
+        size := len(tmp_buf) - pre_idx
+
+        when VERBOSE {
+            fmt.printfln("add_bundle: packet {}: {}", i, tmp_buf[pre_idx:size])
+        }
 
         when VERBOSE {
             fmt.printfln("add_bundle: packet size {}", size)
