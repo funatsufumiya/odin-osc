@@ -230,10 +230,10 @@ test_roundtrip_packet :: proc(t: ^testing.T) {
     defer delete(buf_bundle);
 
     osc.add_packet(&buf_bundle, packet_bundle);
-    decoded_bundle, err_bundle := osc.read_packet(buf_bundle[:]);
+    decoded_bundle, bundle_decode_err := osc.read_packet(buf_bundle[:]);
     defer osc.delete_osc_packet(decoded_bundle);
 
-    testing.expect(t, err_bundle == nil, "decode error");
+    testing.expect_value(t, bundle_decode_err, nil);
     testing.expect_value(t, decoded_bundle.kind, osc.OscPacketKind.bundle);
     testing.expect_value(t, decoded_bundle.bundle.time.seconds, bundle.time.seconds);
     testing.expect_value(t, decoded_bundle.bundle.time.frac, bundle.time.frac);
