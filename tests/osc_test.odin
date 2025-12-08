@@ -172,8 +172,8 @@ test_roundtrip_bundle :: proc(t: ^testing.T) {
     // Create a bundle with two messages
     msg1 := osc.OscMessage{address = "/foo", args = {int(1), f32(2.0)}}
     msg2 := osc.OscMessage{address = "/bar", args = {"baz"}}
-    packet1 := osc.OscPacket{kind = osc.OscPacketKind.message, msg = msg1}
-    packet2 := osc.OscPacket{kind = osc.OscPacketKind.message, msg = msg2}
+    packet1 : osc.OscPacket = msg1
+    packet2 : osc.OscPacket = msg2
     bundle := osc.OscBundle{
         time = osc.OscTime{seconds = 123, frac = 456},
         contents = {packet1, packet2},
@@ -194,8 +194,8 @@ test_roundtrip_bundle :: proc(t: ^testing.T) {
         testing.expect_value(t, len(decoded.contents), len(bundle.contents))
 
         for i in 0..<len(bundle.contents) {
-            want := bundle.contents[i].msg
-            result := decoded.contents[i].msg
+            want := bundle.contents[i].(osc.OscMessage)
+            result := decoded.contents[i].(osc.OscMessage)
             testing.expect_value(t, result.address, want.address)
             testing.expect_value(t, len(result.args), len(want.args))
             for j in 0..<len(want.args) {
@@ -219,7 +219,7 @@ test_roundtrip_bundle :: proc(t: ^testing.T) {
 test_roundtrip_packet :: proc(t: ^testing.T) {
     // Test both message and bundle packets
     msg := osc.OscMessage{address = "/msg", args = {int(99), f32(1.23), "abc"}}
-    packet_msg := osc.OscPacket{kind = osc.OscPacketKind.message, msg = msg}
+    packet_msg : osc.OscPacket = msg
 
     // Message packet roundtrip
     buf_msg := make([dynamic]u8)
@@ -231,18 +231,19 @@ test_roundtrip_packet :: proc(t: ^testing.T) {
 
     testing.expect_value(t, err_msg, nil)
     if err_msg == nil {
-        testing.expect_value(t, decoded_msg.kind, osc.OscPacketKind.message)
-        testing.expect_value(t, decoded_msg.msg.address, msg.address)
-        testing.expect_value(t, len(decoded_msg.msg.args), len(msg.args))
+        testing.expect_value(t, decoded_msg.(osc.OscMessage).address, msg.address)
+        testing.expect_value(t, len(decoded_msg.(osc.OscMessage).args), len(msg.args))
 
         for i in 0..<len(msg.args) {
-            #partial switch _ in decoded_msg.msg.args[i] {
+            dmsg := decoded_msg.(osc.OscMessage)
+
+            #partial switch _ in dmsg.args[i] {
                 case int:
-                    testing.expect_value(t, decoded_msg.msg.args[i].(int), msg.args[i].(int))
+                    testing.expect_value(t, dmsg.args[i].(int), msg.args[i].(int))
                 case f32:
-                    testing.expect_value(t, decoded_msg.msg.args[i].(f32), msg.args[i].(f32))
+                    testing.expect_value(t, dmsg.args[i].(f32), msg.args[i].(f32))
                 case string:
-                    testing.expect_value(t, decoded_msg.msg.args[i].(string), msg.args[i].(string))
+                    testing.expect_value(t, dmsg.args[i].(string), msg.args[i].(string))
                 case:
                     // ignore
             }
@@ -252,10 +253,10 @@ test_roundtrip_packet :: proc(t: ^testing.T) {
     // Bundle packet roundtrip
     msg1 := osc.OscMessage{address = "/a", args = {int(1)}}
     msg2 := osc.OscMessage{address = "/b", args = {f32(2.0)}}
-    packet1 := osc.OscPacket{kind = osc.OscPacketKind.message, msg = msg1}
-    packet2 := osc.OscPacket{kind = osc.OscPacketKind.message, msg = msg2}
+    packet1 : osc.OscPacket = msg1
+    packet2 : osc.OscPacket = msg2
     bundle := osc.OscBundle{time = osc.OscTime{seconds = 1, frac = 2}, contents = {packet1, packet2}}
-    packet_bundle := osc.OscPacket{kind = osc.OscPacketKind.bundle, bundle = bundle}
+    packet_bundle : osc.OscPacket = bundle
 
     buf_bundle := make([dynamic]u8)
     defer delete(buf_bundle)
@@ -267,14 +268,13 @@ test_roundtrip_packet :: proc(t: ^testing.T) {
     testing.expect_value(t, bundle_decode_err, nil)
 
     if bundle_decode_err == nil {
-        testing.expect_value(t, decoded_bundle.kind, osc.OscPacketKind.bundle)
-        testing.expect_value(t, decoded_bundle.bundle.time.seconds, bundle.time.seconds)
-        testing.expect_value(t, decoded_bundle.bundle.time.frac, bundle.time.frac)
-        testing.expect_value(t, len(decoded_bundle.bundle.contents), len(bundle.contents))
+        testing.expect_value(t, decoded_bundle.(osc.OscBundle).time.seconds, bundle.time.seconds)
+        testing.expect_value(t, decoded_bundle.(osc.OscBundle).time.frac, bundle.time.frac)
+        testing.expect_value(t, len(decoded_bundle.(osc.OscBundle).contents), len(bundle.contents))
 
         for i in 0..<len(bundle.contents) {
-            want := bundle.contents[i].msg
-            result := decoded_bundle.bundle.contents[i].msg
+            want := bundle.contents[i].(osc.OscMessage)
+            result := decoded_bundle.(osc.OscBundle).contents[i].(osc.OscMessage)
             testing.expect_value(t, result.address, want.address)
             testing.expect_value(t, len(result.args), len(want.args))
 

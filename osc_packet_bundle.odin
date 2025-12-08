@@ -26,8 +26,12 @@ ReadBundleError :: enum {
 }
 
 delete_osc_packet :: proc(packet: OscPacket) {
-    delete_osc_bundle(packet.bundle)
-    delete_osc_message(packet.msg)
+    switch _ in packet {
+        case OscMessage:
+            delete_osc_message(packet.(OscMessage))
+        case OscBundle:
+            delete_osc_bundle(packet.(OscBundle))
+    }
 }
 
 delete_osc_bundle :: proc(bundle: OscBundle) {
@@ -101,7 +105,7 @@ read_bundle :: proc(payload: []u8, i: int, allocator: mem.Allocator = context.al
             fmt.printfln("read_bundle: reading packet idx = {}, size = {}", idx, size)
         }
 
-        packet, err := read_packet(payload[idx:idx+size], allocator)
+        packet, err := read_packet(payload[idx:idx+size])
 
         if err != nil {
             when VERBOSE {
@@ -144,13 +148,13 @@ read_packet :: proc(payload: []u8, allocator: mem.Allocator = context.allocator)
         if err != nil {
             return OscPacket{}, err
         }
-        return OscPacket{kind = OscPacketKind.bundle, bundle = bundle}, nil
+        return bundle, nil
     } else if payload[0] == '/' {
         msg, _, err := read_message(payload, 0, allocator)
         if err != nil {
             return OscPacket{}, err
         }
-        return OscPacket{kind = OscPacketKind.message, msg = msg}, nil
+        return msg, nil
     } else {
         return OscPacket{}, ReadPacketError.PAYLOAD_NOT_FOUND
     }
@@ -210,10 +214,11 @@ add_bundle :: proc(buffer: ^[dynamic]u8, bundle: OscBundle) {
 
 // Add an OscPacket to buffer (OSC format)
 add_packet :: proc(buffer: ^[dynamic]u8, packet: OscPacket) {
-    if packet.kind == OscPacketKind.message {
-        add_message(buffer, packet.msg)
-    } else if packet.kind == OscPacketKind.bundle {
-        add_bundle(buffer, packet.bundle)
+    switch _ in packet {
+        case OscMessage:
+            add_message(buffer, packet.(OscMessage))
+        case OscBundle:
+            add_bundle(buffer, packet.(OscBundle))
     }
 }
 
