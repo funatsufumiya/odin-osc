@@ -18,7 +18,7 @@ see [filter messages example](./examples/example_receiver_filter_msg/main.odin).
 
 #### filter addresses
 
-document WIP
+see [filter addresses example](./examples/example_receiver_filter_addr/main.odin).
 
 ### Receiver (plain)
 
