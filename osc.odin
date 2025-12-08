@@ -31,6 +31,7 @@ OscTime :: struct {
     seconds: u32,
     frac:    u32,
 }
+
 osc_time_immediate: OscTime = OscTime{seconds=0, frac=1}
 
 ntp_epoch_nano :: -2208988800 * 1_000_000_000;
@@ -38,6 +39,14 @@ ntp_epoch_nano :: -2208988800 * 1_000_000_000;
 to_time :: proc(t: OscTime) -> time.Time {
     abs_nano := ntp_epoch_nano + (i64(t.seconds) * 1_000_000_000) + i64(fraction_to_nano(t.frac));
     return time.Time{_nsec=abs_nano};
+}
+
+from_time :: proc(t: time.Time) -> OscTime {
+    diff_nano := t._nsec - ntp_epoch_nano;
+    seconds := u32(diff_nano / 1_000_000_000);
+    nano := u32(diff_nano % 1_000_000_000);
+    frac := nano_to_fraction(nano);
+    return OscTime{seconds=seconds, frac=frac};
 }
 
 // OscColor

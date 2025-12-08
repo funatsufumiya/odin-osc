@@ -2,6 +2,7 @@ package tests
 
 import "core:testing"
 import "core:math"
+import "core:time"
 // import "core:fmt"
 import osc ".."
 
@@ -103,6 +104,19 @@ test_add_midi :: proc(t: ^testing.T) {
     for i in 0..<len(midi_buf) {
         testing.expect_value(t, midi_buf[i], expected[i])
     }
+}
+
+@(test)
+test_roundtrip_osc_time :: proc(t: ^testing.T) {
+    want := time.now()
+    osc_time := osc.from_time(want)
+    result := osc.to_time(osc_time)
+
+    want_unix := time.to_unix_nanoseconds(want)
+    result_unix := time.to_unix_nanoseconds(result)
+
+    diff : i64 = abs(i64(result_unix) - i64(want_unix))
+    testing.expect(t, abs(diff) < 2, "abs(result_unix - want_unix) < 2 failed")
 }
 
 @(test)
