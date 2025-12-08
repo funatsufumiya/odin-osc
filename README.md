@@ -22,7 +22,7 @@ see [filter addresses example](./examples/example_receiver_filter_addr/main.odin
 
 ### Receiver (plain)
 
-document WIP
+see [plain receiver example](./examples/example_receiver_plain/main.odin).
 
 ## Tests
 
