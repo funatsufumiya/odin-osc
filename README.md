@@ -25,7 +25,7 @@ bytes_written, send_err := net.send_udp(udp_socket, buf[:], endpoint)
 
 ### Receiver (using filter)
 
-#### filter messages
+#### filter messages (even if wrapped in OSC Bundle)
 
 see [filter messages example](./examples/example_receiver_filter_msg/main.odin).
 
