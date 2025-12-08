@@ -99,6 +99,8 @@ for {
 
 ### Receiver (plain)
 
+This example shows how to access OSC Bundle directly (such as time, etc)
+
 see [receiver plain example](./examples/example_receiver_plain/main.odin).
 
 ```odin
@@ -121,6 +123,17 @@ for {
     if err != nil {
         fmt.eprintfln("failed to parse OSC packet: {}", err)
         continue
+    }
+
+    #partial switch _ in packet {
+    case osc.OscBundle:
+        bundle := packet.(osc.OscBundle)
+        osc_time := bundle.time
+        t := osc.to_time(osc_time)
+        fmt.printfln("bundle time: {}", t)
+
+        // result for example:
+        // bundle time: 2025-12-08 05:01:53.132265599 +0000 UTC
     }
 
     fmt.printfln("{}", packet)

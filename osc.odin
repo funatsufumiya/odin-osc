@@ -6,6 +6,7 @@ import "core:fmt"
 import "core:mem"
 import "core:strings"
 import "core:math"
+import "core:time"
 
 VERBOSE :: #config(VERBOSE, false)
 
@@ -31,6 +32,13 @@ OscTime :: struct {
     frac:    u32,
 }
 osc_time_immediate: OscTime = OscTime{seconds=0, frac=1}
+
+ntp_epoch_nano :: -2208988800 * 1_000_000_000;
+
+to_time :: proc(t: OscTime) -> time.Time {
+    abs_nano := ntp_epoch_nano + (i64(t.seconds) * 1_000_000_000) + i64(fraction_to_nano(t.frac));
+    return time.Time{_nsec=abs_nano};
+}
 
 // OscColor
 OscColor :: struct {
