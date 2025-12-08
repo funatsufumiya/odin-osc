@@ -192,6 +192,7 @@ test_roundtrip_bundle :: proc(t: ^testing.T) {
         testing.expect_value(t, decoded.time.seconds, bundle.time.seconds)
         testing.expect_value(t, decoded.time.frac, bundle.time.frac)
         testing.expect_value(t, len(decoded.contents), len(bundle.contents))
+
         for i in 0..<len(bundle.contents) {
             want := bundle.contents[i].msg
             result := decoded.contents[i].msg
@@ -210,6 +211,7 @@ test_roundtrip_bundle :: proc(t: ^testing.T) {
                 }
             }
         }
+
     }
 }
 

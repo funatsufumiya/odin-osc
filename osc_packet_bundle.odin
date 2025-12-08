@@ -66,6 +66,9 @@ read_bundle :: proc(payload: []u8, i: int, allocator: mem.Allocator = context.al
         }
 
         if idx + 4 > len(payload) {
+            when VERBOSE {
+                fmt.printfln("payload EOF")
+            }
             break
         }
         bytes, new_idx := read_u32(payload, idx)
@@ -74,6 +77,9 @@ read_bundle :: proc(payload: []u8, i: int, allocator: mem.Allocator = context.al
             fmt.printfln("read_bundle: packet size {}", size)
         }
         if size < 0 {
+            when VERBOSE {
+                fmt.printfln("read_bundle: OSC_BUNDLE_SIZE_PARSE_FAILED")
+            }
             return OscBundle{}, .OSC_BUNDLE_SIZE_PARSE_FAILED
         }
         if idx + size > len(payload) {
@@ -90,7 +96,9 @@ read_bundle :: proc(payload: []u8, i: int, allocator: mem.Allocator = context.al
             return OscBundle{}, .OSC_BUNDLE_SIZE_TOO_SHORT
         }
         idx = new_idx
+        fmt.printfln("read_bundle: reading packet idx = {}, size = {}", idx, size)
         packet, err := read_packet(payload[idx:idx+size], allocator)
+
         if err != nil {
             when VERBOSE {
                 fmt.printfln("read_bundle: READ_PACKET_FAILED, info below:")
@@ -101,15 +109,24 @@ read_bundle :: proc(payload: []u8, i: int, allocator: mem.Allocator = context.al
 
             return OscBundle{}, .READ_PACKET_FAILED
         }
+
         when VERBOSE {
-                fmt.printfln("read_bundle: content {} = {}", i, packet)
+            fmt.printfln("read_bundle: content {} = {}", i, packet)
         }
+
         append(&contents, packet)
         idx += size
 
         i += 1
     }
-    return OscBundle{time = time, contents = contents[:]}, nil
+
+    result_bundle := OscBundle{time = time, contents = contents[:]}
+
+    when VERBOSE {
+        fmt.printfln("read_bundle: result_bundle = {}", result_bundle)
+    }
+
+    return result_bundle, nil
 }
 
 // Read an OscPacket from payload, starting at index i
