@@ -106,6 +106,29 @@ test_add_midi :: proc(t: ^testing.T) {
 }
 
 @(test)
+test_roundtrip_append_read :: proc(t: ^testing.T) {
+    buf := make([dynamic]u8)
+    defer delete(buf)
+
+    {
+        a := u32(24)
+        osc.append_u32(&buf, a)
+        b, _ := osc.read_u32(buf[:], 0)
+
+        testing.expect_value(t, b, a)
+    }
+
+    {
+        a := int(24)
+        osc.append_int(&buf, a)
+        b, _ := osc.read_u32(buf[:], 0)
+        c := int(transmute(i32)(b))
+
+        testing.expect_value(t, c, a)
+    }
+}
+
+@(test)
 test_roundtrip_message :: proc(t: ^testing.T) {
     msgs : []osc.OscMessage
     msgs = {

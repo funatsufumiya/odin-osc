@@ -1,6 +1,7 @@
 package osc
 
 import "core:mem"
+import "core:fmt"
 
 ReadPacketBundleMessageError :: union {
     ReadBundleError,
@@ -57,11 +58,17 @@ read_bundle :: proc(payload: []u8, i: int, allocator: mem.Allocator = context.al
         }
         bytes, new_idx := read_u32(payload, idx)
         size := int(bytes)
-        idx = new_idx
         if size < 0 {
             return OscBundle{}, .OSC_BUNDLE_SIZE_TOO_SHORT
         }
         if idx + size > len(payload) {
+            when VERBOSE {
+                fmt.printfln("payload: {}", payload)
+                fmt.printfln("idx: {}", idx)
+                fmt.printfln("payload[idx]: {}", payload[idx])
+                fmt.printfln("bytes: {}", bytes)
+                fmt.printfln("size: {}", size)
+            }
             return OscBundle{}, .OSC_BUNDLE_SIZE_MISMATCH
         }
         packet, err := read_packet(payload[idx:idx+size], allocator)
@@ -69,7 +76,8 @@ read_bundle :: proc(payload: []u8, i: int, allocator: mem.Allocator = context.al
             return OscBundle{}, .READ_PACKET_FAILED
         }
         append(&contents, packet)
-        idx += size
+        // idx += size
+        idx = new_idx
     }
     return OscBundle{time = time, contents = contents[:]}, nil
 }
@@ -110,6 +118,9 @@ add_bundle :: proc(buffer: ^[dynamic]u8, bundle: OscBundle) {
         tmp_buf_len = 0
         add_packet(&tmp_buf, packet)
         size := len(tmp_buf)
+        when VERBOSE {
+            fmt.printfln("add_bundle size {}", size)
+        }
         append_u32(buffer, u32(size))
         append_slice(buffer, tmp_buf[:])
     }
