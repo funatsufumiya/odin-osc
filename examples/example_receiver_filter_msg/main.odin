@@ -6,6 +6,8 @@ import "core:mem"
 import osc "../.."
 import util "../example_util"
 
+// show all messages even if wrapped in OSC Bundle.
+
 main :: proc() {
     util.debug_tracking_allocator_init()
 
