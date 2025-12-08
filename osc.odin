@@ -117,6 +117,18 @@ append_u64 :: proc (buffer: ^[dynamic]u8, v: u64) {
     append(buffer, u8(bits & 0xff))
 }
 
+append_bytes :: proc (buffer: ^[dynamic]u8, bytes: []u8) {
+    for b in bytes {
+        append(buffer, u8(b))
+    }
+}
+
+append_string :: proc (buffer: ^[dynamic]u8, str: string) {
+    for letter in str {
+        append(buffer, u8(letter))
+    }
+}
+
 fraction_to_nano :: proc(fraction: u32) -> u32 {
     return u32((u64(fraction) * 1_000_000_000) / (1 << 32))
 }
@@ -239,8 +251,8 @@ read_osc_time :: proc(payload: []u8, i: int) -> (OscTime, int, bool) {
         return OscTime{}, i, false
     }
     result: OscTime
-    result.seconds = u32(payload[i]) << 24 | u32(payload[i+1]) << 16 | u32(payload[i+2]) << 8 | u32(payload[i+3])
-    result.frac = u32(payload[i+4]) << 24 | u32(payload[i+5]) << 16 | u32(payload[i+6]) << 8 | u32(payload[i+7])
+    result.seconds, _ = read_u32(payload, i)
+    result.frac, _ = read_u32(payload, i+4)
     return result, i + 8, true
 }
 
